@@ -3,12 +3,7 @@
 --- !u!78 &1
 TagManager:
   serializedVersion: 2
-  tags:
-  - Enemy
-  - Leaf
-  - Projectile
-  - GoThroughPlatform
-  - Boss
+  tags: []
   layers:
   - Default
   - TransparentFX
@@ -16,12 +11,12 @@ TagManager:
   - 
   - Water
   - UI
-  - Wall
-  - Ground
-  - 'Enemy '
-  - 'Interactable '
-  - Projectile
-  - 'Player '
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
   - 
   - 
   - 
