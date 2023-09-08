@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using static PlayerManaAndAtk; 
 
 public class Move : MonoBehaviour
 {
@@ -24,6 +25,9 @@ public class Move : MonoBehaviour
     public float dashingPower = 14f;
     public float dashingTime = 0.2f;
     public float dashingCooldown = 1f;
+
+    public GameObject bulletPrefab;
+    public Transform shootingPoint;
 
     [SerializeField] private Rigidbody2D rb;
     [SerializeField] private Transform groundCheck;
@@ -54,6 +58,11 @@ public class Move : MonoBehaviour
         if (Input.GetKeyDown(KeyCode.LeftShift) && canDash)
         {
             StartCoroutine(Dash());
+        }
+
+        if (Input.GetKeyDown(KeyCode.E))
+        {
+            Shoot(); 
         }
 
 
@@ -93,7 +102,7 @@ public class Move : MonoBehaviour
 
     private void WallSlide()
     {
-        if (IsWalled() && !IsGrounded() && horizontal != 0f)
+        if (IsWalled() && !IsGrounded() /*&& horizontal != 0f*/)
         {
             isWallSliding = true;
             rb.velocity = new Vector2(rb.velocity.x, Mathf.Clamp(rb.velocity.y, -wallSlidingSpeed, float.MaxValue));
@@ -150,6 +159,9 @@ public class Move : MonoBehaviour
             Vector3 localScale = transform.localScale;
             localScale.x *= -1f;
             transform.localScale = localScale;
+
+            shootingPoint.transform.Rotate(0, 180, 0);
+
         }
     }
     private IEnumerator Dash()
@@ -166,5 +178,11 @@ public class Move : MonoBehaviour
         isDashing = false;
         yield return new WaitForSeconds(dashingCooldown);
         canDash = true;
+    }
+
+    void Shoot()
+    {
+        shootingPoint.rotation = gameObject.transform.rotation;
+        Instantiate(bulletPrefab, shootingPoint.position, shootingPoint.rotation);
     }
 }
