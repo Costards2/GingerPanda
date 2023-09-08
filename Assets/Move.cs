@@ -1,7 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using static PlayerManaAndAtk; 
 
 public class Move : MonoBehaviour
 {
@@ -26,8 +25,8 @@ public class Move : MonoBehaviour
     public float dashingTime = 0.2f;
     public float dashingCooldown = 1f;
 
-    public GameObject bulletPrefab;
-    public Transform shootingPoint;
+    //public GameObject bulletPrefab;
+    //public Transform shootingPoint;
 
     [SerializeField] private Rigidbody2D rb;
     [SerializeField] private Transform groundCheck;
@@ -60,10 +59,10 @@ public class Move : MonoBehaviour
             StartCoroutine(Dash());
         }
 
-        if (Input.GetKeyDown(KeyCode.E))
-        {
-            Shoot(); 
-        }
+        //if (Input.GetKeyDown(KeyCode.E))
+        //{
+            //Shoot(); 
+        //}
 
 
         WallSlide();
@@ -160,7 +159,7 @@ public class Move : MonoBehaviour
             localScale.x *= -1f;
             transform.localScale = localScale;
 
-            shootingPoint.transform.Rotate(0, 180, 0);
+            //shootingPoint.transform.Rotate(0, 180, 0);
 
         }
     }
@@ -180,9 +179,9 @@ public class Move : MonoBehaviour
         canDash = true;
     }
 
-    void Shoot()
-    {
-        shootingPoint.rotation = gameObject.transform.rotation;
-        Instantiate(bulletPrefab, shootingPoint.position, shootingPoint.rotation);
-    }
+    //void Shoot()
+    //{
+        //shootingPoint.rotation = gameObject.transform.rotation;
+        //Instantiate(bulletPrefab, shootingPoint.position, shootingPoint.rotation);
+    //}
 }

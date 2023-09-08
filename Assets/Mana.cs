@@ -4,15 +4,25 @@ using UnityEngine;
 
 public class Mana : MonoBehaviour
 {
-    // Start is called before the first frame update
+    public GameObject bulletPrefab;
+    public Transform shootingPoint;
+
     void Start()
     {
         
     }
 
-    // Update is called once per frame
     void Update()
     {
-        
+        if (Input.GetKeyDown(KeyCode.E))
+        {
+            Shoot();
+        }
+    }
+
+    void Shoot()
+    {
+        shootingPoint.rotation = gameObject.transform.rotation;
+        Instantiate(bulletPrefab, shootingPoint.position, shootingPoint.rotation);
     }
 }
