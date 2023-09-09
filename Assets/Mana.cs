@@ -6,9 +6,9 @@ using UnityEngine.UI;
 public class Mana : MonoBehaviour
 {
     public ManaPlay mana;
-    public GameObject bulletPrefab;
+    public GameObject bulletPrefab; 
     public Transform shootingPoint;
-    public float manaMana;
+    private float manaMana;
 
     private void Awake()
     {
