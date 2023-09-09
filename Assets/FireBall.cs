@@ -1,15 +1,17 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UIElements;
 
 public class FireBall : MonoBehaviour
 {
-    public float speed = -10f;
+    public float speed = 10f;
     public Rigidbody2D rb;
-
+    
+ 
     void Start()
     {
-        rb.velocity = transform.right * speed;
+        //rb.velocity = transform.forward * speed; 
     }
 
     void Update()

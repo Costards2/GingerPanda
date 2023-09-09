@@ -7,7 +7,6 @@ public class Move : MonoBehaviour
     private float horizontal;
     private float speed = 8f;
     private float jumpingPower = 16f;
-    private bool isFacingRight = true;
 
     private bool isWallSliding;
     private float wallSlidingSpeed = 2f;
@@ -25,9 +24,6 @@ public class Move : MonoBehaviour
     public float dashingTime = 0.2f;
     public float dashingCooldown = 1f;
 
-    //public GameObject bulletPrefab;
-    //public Transform shootingPoint;
-
     [SerializeField] private Rigidbody2D rb;
     [SerializeField] private Transform groundCheck;
     [SerializeField] private LayerMask groundLayer;
@@ -35,6 +31,10 @@ public class Move : MonoBehaviour
     [SerializeField] private LayerMask wallLayer;
     [SerializeField] private TrailRenderer trail;
 
+    private void Awake()
+    {
+       
+    }
     private void Update()
     {
         if (isDashing)
@@ -43,6 +43,15 @@ public class Move : MonoBehaviour
         }
 
         horizontal = Input.GetAxisRaw("Horizontal");
+
+        if (horizontal > 0)
+        {
+            transform.localScale = new Vector3(1.5f, 1.5f, 1.5f);
+        }
+        else if (horizontal < 0)
+        {
+            transform.localScale = new Vector3(-1.5f, 1.5f, 1.5f);
+        }
 
         if (Input.GetButtonDown("Jump") && IsGrounded())
         {
@@ -59,19 +68,9 @@ public class Move : MonoBehaviour
             StartCoroutine(Dash());
         }
 
-        //if (Input.GetKeyDown(KeyCode.E))
-        //{
-            //Shoot(); 
-        //}
-
-
         WallSlide();
         WallJump();
 
-        if (!isWallJumping)
-        {
-            Flip();
-        }
     }
 
     private void FixedUpdate()
@@ -101,7 +100,7 @@ public class Move : MonoBehaviour
 
     private void WallSlide()
     {
-        if (IsWalled() && !IsGrounded() /*&& horizontal != 0f*/)
+        if (IsWalled() && !IsGrounded() && horizontal != 0f)
         {
             isWallSliding = true;
             rb.velocity = new Vector2(rb.velocity.x, Mathf.Clamp(rb.velocity.y, -wallSlidingSpeed, float.MaxValue));
@@ -117,7 +116,7 @@ public class Move : MonoBehaviour
         if (isWallSliding)
         {
             isWallJumping = false;
-            wallJumpingDirection = -transform.localScale.x;
+           
             wallJumpingCounter = wallJumpingTime;
 
             CancelInvoke(nameof(StopWallJumping));
@@ -133,13 +132,7 @@ public class Move : MonoBehaviour
             rb.velocity = new Vector2(wallJumpingDirection * wallJumpingPower.x, wallJumpingPower.y);
             wallJumpingCounter = 0f;
 
-            if (transform.localScale.x != wallJumpingDirection)
-            {
-                isFacingRight = !isFacingRight;
-                Vector3 localScale = transform.localScale;
-                localScale.x *= -1f;
-                transform.localScale = localScale;
-            }
+            
 
             Invoke(nameof(StopWallJumping), wallJumpingDuration);
         }
@@ -150,18 +143,6 @@ public class Move : MonoBehaviour
         isWallJumping = false;
     }
 
-    private void Flip()
-    {
-        if (isFacingRight && horizontal < 0f || !isFacingRight && horizontal > 0f)
-        {
-            isFacingRight = !isFacingRight;
-            transform.Rotate(0, 180, 0);
-            //localScale = transform.localScale;
-            //localScale.x *= -1f;
-            //transform.localScale = localScale;
-
-        }
-    }
     private IEnumerator Dash()
     {
         canDash = false;
@@ -177,10 +158,4 @@ public class Move : MonoBehaviour
         yield return new WaitForSeconds(dashingCooldown);
         canDash = true;
     }
-
-    //void Shoot()
-    //{
-        //shootingPoint.rotation = gameObject.transform.rotation;
-        //Instantiate(bulletPrefab, shootingPoint.position, shootingPoint.rotation);
-    //}
 }
