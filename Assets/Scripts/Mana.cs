@@ -46,7 +46,7 @@ public class Mana : MonoBehaviour
         {
 
             manaAmount = 0;
-            manaRegenAmount = 15f;
+            manaRegenAmount = 7.5f;
         }
 
         public void Update()

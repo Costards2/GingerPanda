@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI; 
 
-public class ManaBar : MonoBehaviour
+public class PlayerManaAndAtk : MonoBehaviour
 {
     
     public Mana mana; 
@@ -40,7 +40,7 @@ public class ManaBar : MonoBehaviour
         public Mana() {
 
             manaAmount = 0;
-            manaRegenAmount = 15f;
+            manaRegenAmount = 7.5f;
         }
 
         public void Update()
