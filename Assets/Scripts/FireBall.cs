@@ -7,7 +7,6 @@ public class FireBall : MonoBehaviour
 {
     public float speed = 10f;
     public Rigidbody2D rb;
-    public string target;
     
  
     void Start()
@@ -22,10 +21,13 @@ public class FireBall : MonoBehaviour
     }
     void OnTriggerEnter2D(Collider2D hitInfo)
     {
-        if (hitInfo.CompareTag("" + target))
+        if (hitInfo.CompareTag("Enemy"))
         {
-            Destroy(gameObject);
+           
         }
+
+        Destroy(gameObject);
+
     }
     private void OnCollisionEnter2D(Collision2D collision)
     {

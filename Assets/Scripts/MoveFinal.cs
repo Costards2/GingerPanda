@@ -2,11 +2,12 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class Move : MonoBehaviour
+public class DashTentativa : MonoBehaviour
 {
     private float horizontal;
     private float speed = 8f;
     private float jumpingPower = 16f;
+    private bool isFacingRight = true;
 
     private bool isWallSliding;
     private float wallSlidingSpeed = 2f;
@@ -31,27 +32,18 @@ public class Move : MonoBehaviour
     [SerializeField] private LayerMask wallLayer;
     [SerializeField] private TrailRenderer trail;
 
-    private void Awake()
-    {
-       
-    }
+    Vector2 moveDirection; 
+
     private void Update()
     {
+
+        
         if (isDashing)
         {
             return;
         }
 
         horizontal = Input.GetAxisRaw("Horizontal");
-
-        if (horizontal > 0)
-        {
-            transform.localScale = new Vector3(1.5f, 1.5f, 1.5f);
-        }
-        else if (horizontal < 0)
-        {
-            transform.localScale = new Vector3(-1.5f, 1.5f, 1.5f);
-        }
 
         if (Input.GetButtonDown("Jump") && IsGrounded())
         {
@@ -68,9 +60,16 @@ public class Move : MonoBehaviour
             StartCoroutine(Dash());
         }
 
+        moveDirection = new Vector2(horizontal, 0).normalized; 
+
+
         WallSlide();
         WallJump();
 
+        if (!isWallJumping)
+        {
+            Flip();
+        }
     }
 
     private void FixedUpdate()
@@ -100,7 +99,7 @@ public class Move : MonoBehaviour
 
     private void WallSlide()
     {
-        if (IsWalled() && !IsGrounded() && horizontal != 0f)
+        if (IsWalled() && !IsGrounded() /*&& horizontal != 0f*/)
         {
             isWallSliding = true;
             rb.velocity = new Vector2(rb.velocity.x, Mathf.Clamp(rb.velocity.y, -wallSlidingSpeed, float.MaxValue));
@@ -116,7 +115,7 @@ public class Move : MonoBehaviour
         if (isWallSliding)
         {
             isWallJumping = false;
-           
+            //wallJumpingDirection = -transform.localScale.x;
             wallJumpingCounter = wallJumpingTime;
 
             CancelInvoke(nameof(StopWallJumping));
@@ -131,8 +130,12 @@ public class Move : MonoBehaviour
             isWallJumping = true;
             rb.velocity = new Vector2(wallJumpingDirection * wallJumpingPower.x, wallJumpingPower.y);
             wallJumpingCounter = 0f;
-
             
+            if (transform.localScale.x != wallJumpingDirection)
+            {
+                isFacingRight = !isFacingRight;
+                transform.Rotate(0, 180, 0);
+            }
 
             Invoke(nameof(StopWallJumping), wallJumpingDuration);
         }
@@ -143,13 +146,21 @@ public class Move : MonoBehaviour
         isWallJumping = false;
     }
 
+    private void Flip()
+    {
+        if (isFacingRight && horizontal < 0f || !isFacingRight && horizontal > 0f)
+        {
+            isFacingRight = !isFacingRight;
+            transform.Rotate(0, 180, 0);
+        }
+    }
     private IEnumerator Dash()
     {
         canDash = false;
         isDashing = true;
         float originalGravity = rb.gravityScale;
         rb.gravityScale = 0f;
-        rb.velocity = new Vector2(transform.localScale.x * dashingPower, 0f);
+        rb.velocity = new Vector2(moveDirection.x * dashingPower, 0f);
         trail.emitting = true;
         yield return new WaitForSeconds(dashingTime);
         trail.emitting = false;
