@@ -2,7 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class DashTentativa : MonoBehaviour
+public class MoveFinal : MonoBehaviour
 {
     private float horizontal;
     private float speed = 8f;
@@ -37,7 +37,6 @@ public class DashTentativa : MonoBehaviour
     private void Update()
     {
 
-        
         if (isDashing)
         {
             return;
@@ -52,7 +51,7 @@ public class DashTentativa : MonoBehaviour
 
         if (Input.GetButtonUp("Jump") && rb.velocity.y > 0f)
         {
-            rb.velocity = new Vector2(rb.velocity.x, rb.velocity.y * 0.5f);
+            rb.velocity = new Vector2(rb.velocity.x, rb.velocity.y * 0.5f); 
         }
 
         if (Input.GetKeyDown(KeyCode.LeftShift) && canDash)
@@ -115,7 +114,7 @@ public class DashTentativa : MonoBehaviour
         if (isWallSliding)
         {
             isWallJumping = false;
-            //wallJumpingDirection = -transform.localScale.x;
+            wallJumpingDirection = -transform.localScale.x;
             wallJumpingCounter = wallJumpingTime;
 
             CancelInvoke(nameof(StopWallJumping));
