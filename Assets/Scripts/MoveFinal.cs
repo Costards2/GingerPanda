@@ -4,7 +4,7 @@ using UnityEngine;
 
 public class DashTentativa : MonoBehaviour
 {
-    private float horizontal;
+    private float horizontal = 0f;
     private float speed = 8f;
     private float jumpingPower = 16f;
     private bool isFacingRight = true;
@@ -36,7 +36,6 @@ public class DashTentativa : MonoBehaviour
 
     private void Update()
     {
-
         
         if (isDashing)
         {
@@ -99,7 +98,7 @@ public class DashTentativa : MonoBehaviour
 
     private void WallSlide()
     {
-        if (IsWalled() && !IsGrounded() /*&& horizontal != 0f*/)
+        if (IsWalled() && !IsGrounded())
         {
             isWallSliding = true;
             rb.velocity = new Vector2(rb.velocity.x, Mathf.Clamp(rb.velocity.y, -wallSlidingSpeed, float.MaxValue));
@@ -115,7 +114,6 @@ public class DashTentativa : MonoBehaviour
         if (isWallSliding)
         {
             isWallJumping = false;
-            //wallJumpingDirection = -transform.localScale.x;
             wallJumpingCounter = wallJumpingTime;
 
             CancelInvoke(nameof(StopWallJumping));
