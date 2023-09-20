@@ -46,7 +46,9 @@ public class MoveFSM : MonoBehaviour
         jumpInput = Input.GetKey(KeyCode.Space);
         horizontalInput = Input.GetAxisRaw("Horizontal");
         dashInput = Input.GetKeyDown(KeyCode.LeftShift);
-
+        
+        Debug.Log(dashInput); 
+            
         if (isDashing)
         {
             return;
@@ -122,11 +124,14 @@ public class MoveFSM : MonoBehaviour
         
         state = State.Glide;
 
-        if (horizontalInput != 0f)
+        if (horizontalInput != 0f && IsGrounded())
         {
             state = State.Run;
         }
-
+        else if (canDash && dashInput)
+        {
+            state = State.Dash;
+        }
     }
 
     void GlideState()
