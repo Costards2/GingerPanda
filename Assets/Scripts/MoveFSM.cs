@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.EventSystems;
 
@@ -34,12 +35,18 @@ public class MoveFSM : MonoBehaviour
     [SerializeField] private Transform wallCheck;
     [SerializeField] private LayerMask wallLayer;
     [SerializeField] private TrailRenderer trail;
+    [SerializeField] private Animator animator;
 
     Vector2 moveDirection;
 
     enum State { Idle, Run, Jump, Glide, Dash }
 
     State state = State.Idle;
+
+    private void Awake()
+    {
+        animator = GetComponent<Animator>();
+    }
 
     void FixedUpdate()
     {
@@ -62,7 +69,7 @@ public class MoveFSM : MonoBehaviour
             case State.Run: RunState(); break;
             case State.Jump: JumpState(); break;
             case State.Glide: GlideState(); break;
-            case State.Dash: StartCoroutine(Dash()); break;
+            case State.Dash: Dash(); break;
         }
 
         moveDirection = new Vector2(horizontalInput, 0).normalized;
@@ -70,7 +77,7 @@ public class MoveFSM : MonoBehaviour
 
     void IdleState()
     {
-        //animator.Play("Idle");
+        animator.Play("Idle");
 
         if (IsGrounded())
         {
@@ -93,7 +100,7 @@ public class MoveFSM : MonoBehaviour
 
     void RunState()
     {
-        //animator.Play("Run");
+        animator.Play("Run");
 
         rb.velocity = new Vector2(horizontalInput * speed, rb.velocity.y);
 
@@ -103,22 +110,21 @@ public class MoveFSM : MonoBehaviour
             {
                 state = State.Jump;
             }
-        }
-        else if (canDash && dashInput)
-        {
-            state = State.Dash;
-        }
-
-        else if (horizontalInput == 0f)
-        {
-            state = State.Idle;
+            else if (canDash && dashInput)
+            {
+                state = State.Dash;
+            }
+            else if (horizontalInput == 0f)
+            {
+                state = State.Idle;
+            }
         }
 
     }
 
     void JumpState()
     {
-        //animator.Play("Jump");
+        animator.Play("Jump");
 
         rb.velocity = speed * horizontalInput * Vector2.right + jumpingPower * Vector2.up;
         
@@ -136,15 +142,14 @@ public class MoveFSM : MonoBehaviour
 
     void GlideState()
     {
-        /* actions
-        if (physics.velocity.y > 0f)
+        if (jumpInput)
         {
             animator.Play("Jump");
         }
         else
         {
             animator.Play("Fall");
-        }*/
+        }
 
         rb.velocity = rb.velocity.y * Vector2.up + speed * horizontalInput * Vector2.right;
 
@@ -162,20 +167,11 @@ public class MoveFSM : MonoBehaviour
         }
     }
 
-    public IEnumerator Dash()
+    void Dash()
     {
-        canDash = false;
-        isDashing = true;
-        float originalGravity = rb.gravityScale;
-        rb.gravityScale = 0f;
-        rb.velocity = new Vector2(moveDirection.x * dashingPower, 0f);
-        trail.emitting = true;
-        yield return new WaitForSeconds(dashingTime);
-        trail.emitting = false;
-        rb.gravityScale = originalGravity;
-        isDashing = false;
-        yield return new WaitForSeconds(dashingCooldown);
-        canDash = true;
+        animator.Play("Dash");
+
+        StartCoroutine(DashTempo());
 
         if (IsGrounded())
         {
@@ -214,5 +210,21 @@ public class MoveFSM : MonoBehaviour
             isFacingRight = !isFacingRight;
             transform.Rotate(0, 180, 0);
         }
+    }
+    
+    public IEnumerator DashTempo ()
+    {
+        canDash = false;
+        isDashing = true;
+        float originalGravity = rb.gravityScale;
+        rb.gravityScale = 0f;
+        rb.velocity = new Vector2(moveDirection.x * dashingPower, 0f);
+        trail.emitting = true;
+        yield return new WaitForSeconds(dashingTime);
+        trail.emitting = false;
+        rb.gravityScale = originalGravity;
+        isDashing = false;
+        yield return new WaitForSeconds(dashingCooldown);
+        canDash = true;
     }
 }
