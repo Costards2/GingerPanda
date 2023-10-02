@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.EventSystems;
+using UnityEngine.UIElements;
+using static Mana;
 
 public class MoveFSM : MonoBehaviour
 {
@@ -13,15 +15,18 @@ public class MoveFSM : MonoBehaviour
 
     private bool isWallSliding;
     private float wallSlidingSpeed = 2f;
+    private float wallSlideDelay = 1f;
 
     private bool isWallJumping;
     private float wallJumpingDirection;
-    private readonly float wallJumpingTime = 0.2f;
-    private float wallJumpingCounter;
-    private readonly float wallJumpingDuration = 0.4f;
-    private Vector2 wallJumpingPower = new Vector2(8f, 16f);
-    private float rot;
+    private Vector2 wallJumpingPower = new Vector2(8.5f, 16f);
     public float facing = 0;
+    bool canWallJump = true;
+    public float wallJumpTime = 0.3f;
+    public float wallJumpCooldown = 1f;
+    private float wallJumpingCounter;
+    private readonly float wallJumpingDuration = 0.2f;
+    private readonly float wallJumpingTime = 0.2f;
 
     public bool canDash = true;
     private bool isDashing;
@@ -30,6 +35,17 @@ public class MoveFSM : MonoBehaviour
     public float dashingPower = 14f;
     public float dashingTime = 0.2f;
     public float dashingCooldown = 1f;
+
+    public ManaPlay mana;
+    public GameObject bulletPrefab;
+    public Transform shootingPoint;
+    private float manaMana;
+    //bool canShoot = true;
+    bool isShooting = false;
+    float shootingTime = 0.75f;
+    float shootingCooldown = 1f;
+    public bool canShoot = true;
+    public bool shootInput;
 
     [SerializeField] private Rigidbody2D rb;
     [SerializeField] private Transform trans;
@@ -42,7 +58,7 @@ public class MoveFSM : MonoBehaviour
 
     Vector2 moveDirection;
 
-    enum State { Idle, Run, Jump, Glide, Dash, WallSlide, WallJump }
+    enum State { Idle, Run, Jump, Glide, Dash, WallSlide, WallJump, Atk, Shoot }
 
     State state = State.Idle;
 
@@ -50,10 +66,13 @@ public class MoveFSM : MonoBehaviour
     {
         animator = GetComponent<Animator>();
         trans = GetComponent<Transform>();
+        mana = new ManaPlay();
     }
 
     private void Update()
     {
+        mana.Update();
+
         if (isFacingRight)
         {
             facing = -1;
@@ -62,6 +81,15 @@ public class MoveFSM : MonoBehaviour
         {
             facing = 1;
         }
+
+        if (horizontalInput != 0 && IsWalled() && !IsGrounded())
+        {
+            isWallSliding = true;
+        }
+        else
+        {
+            isWallSliding = false;
+        }
     }
 
     void FixedUpdate()
@@ -69,15 +97,14 @@ public class MoveFSM : MonoBehaviour
         jumpInput = Input.GetKey(KeyCode.Space);
         horizontalInput = Input.GetAxisRaw("Horizontal");
         dashInput = Input.GetKeyDown(KeyCode.LeftShift);
+        shootInput = Input.GetKey(KeyCode.E);
 
-        //Debug.Log(dashInput); 
+        Debug.Log(isWallJumping); 
             
         if (isDashing)
         {
             return;
         }
-
-        Flip();
 
         switch (state)
         {
@@ -88,6 +115,8 @@ public class MoveFSM : MonoBehaviour
             case State.Dash: Dash(); break;
             case State.WallSlide: WallSlide(); break;
             case State.WallJump: WallJump(); break;
+            case State.Shoot: Shoot(); break;
+            case State.Atk: Atk(); break;
         }
 
         moveDirection = new Vector2(horizontalInput, 0).normalized;
@@ -97,7 +126,7 @@ public class MoveFSM : MonoBehaviour
     {
         animator.Play("Idle");
 
-        if (canDash && dashInput && horizontalInput != 0) //N faz sentido mas mantenha (Confie em min)
+        if (canDash && dashInput && horizontalInput != 0) 
         {
             state = State.Dash;
         }
@@ -111,13 +140,11 @@ public class MoveFSM : MonoBehaviour
             else if (horizontalInput != 0f)
             {
                 state = State.Run;
-
             }
-        }
-        else if (horizontalInput != 0f)
-        {
-            state = State.Run;
-
+            if ( shootInput && /* mana.manaAmount > 20 && */ canShoot)
+            {
+                state = State.Shoot;
+            }
         }
     }
 
@@ -125,13 +152,15 @@ public class MoveFSM : MonoBehaviour
     {
         animator.Play("Run");
 
+        Flip();
+
         rb.velocity = new Vector2(horizontalInput * speed, rb.velocity.y);
 
         if (canDash && dashInput && horizontalInput != 0)
         {
             state = State.Dash;
         }
-        else if (IsWalled() && !IsGrounded())
+        else if (isWallSliding)
         {
             state = State.WallSlide;
         }
@@ -146,12 +175,18 @@ public class MoveFSM : MonoBehaviour
             {
                 state = State.Idle;
             }
+            else if (shootInput && /* mana.manaAmount > 20 && */ canShoot)
+            {
+                state = State.Shoot;
+            }
         }
     }
 
     void JumpState()
     {
         animator.Play("Jump");
+
+        Flip();
 
         rb.velocity = speed * horizontalInput * Vector2.right + jumpingPower * Vector2.up;
 
@@ -163,7 +198,7 @@ public class MoveFSM : MonoBehaviour
         {
             state = State.Dash;
         }
-        else if (IsWalled() && !IsGrounded())
+        else if (isWallSliding)
         {
             state = State.WallSlide;
         }
@@ -175,13 +210,15 @@ public class MoveFSM : MonoBehaviour
     {
         animator.Play("Fall");
 
+        Flip();
+
         rb.velocity = rb.velocity.y * Vector2.up + speed * horizontalInput * Vector2.right;
 
         if (canDash && dashInput && horizontalInput != 0)
         {
             state = State.Dash;
         }
-        else if (IsWalled() && !IsGrounded())
+        else if (isWallSliding)
         {
             state = State.WallSlide;
         }
@@ -200,9 +237,20 @@ public class MoveFSM : MonoBehaviour
         }
     }
 
+    private void Flip()
+    {
+        if (isFacingRight && horizontalInput < 0f || !isFacingRight && horizontalInput > 0f)
+        {
+            isFacingRight = !isFacingRight;
+            transform.Rotate(0, 180, 0);
+        }
+    }
+
     void Dash()
     {
         animator.Play("Dash");
+
+        Flip();
 
         StartCoroutine(DashTempo());
 
@@ -221,129 +269,17 @@ public class MoveFSM : MonoBehaviour
                 state = State.Run;
             }
         }
-        else if (horizontalInput != 0f && !IsGrounded())
+        else if (/* horizontalInput != 0f && */ !IsGrounded())
         {
             state = State.Glide;
         }
-        else if (IsWalled() && !IsGrounded())
+        else if (isWallSliding)
         {
             state = State.WallSlide;
         }
-
     }
 
-    void WallSlide()
-    {
-        animator.Play("WallSlide");
-
-        isWallSliding = true;
-        rb.velocity = new Vector2(rb.velocity.x, Mathf.Clamp(rb.velocity.y, -wallSlidingSpeed, float.MaxValue));
-
-        if (isWallSliding)
-        {
-            state = State.WallJump;
-        }
-
-        if (IsGrounded())
-        {
-            if (horizontalInput == 0)
-            {
-                isWallSliding = false;
-                state = State.Idle;
-            }
-            else if (jumpInput)
-            {
-                isWallSliding = false;
-                state = State.Jump;
-            }
-            else if (horizontalInput != 0f)
-            {
-                isWallSliding = false;
-                state = State.Run;
-            }
-        }
-    }
-
-    void WallJump()
-    {
-        animator.Play("WallJump");
-
-        isWallJumping = false;
-        wallJumpingDirection = facing;
-        wallJumpingCounter = wallJumpingTime;
-
-        CancelInvoke(nameof(StopWallJumping));
-
-        wallJumpingCounter -= Time.deltaTime;
-        
-
-        if (jumpInput && wallJumpingCounter > 0f)
-        {
-            isWallJumping = true;
-            rb.velocity = new Vector2(wallJumpingDirection * wallJumpingPower.x, wallJumpingPower.y);
-            wallJumpingCounter = 0f;
-
-            Flip();
-
-            Invoke(nameof(StopWallJumping), wallJumpingDuration);
-        }
-
-
-        if (canDash && dashInput && horizontalInput != 0)
-        {
-            state = State.Dash;
-        }
-        else if (IsWalled() && !IsGrounded())
-        {
-            state = State.WallSlide;
-        }
-        else if (horizontalInput != 0f && !IsGrounded())
-        {
-            state = State.Glide;
-        }
-
-        if (IsGrounded())
-        {
-            if (jumpInput)
-            {
-                state = State.Jump;
-            }
-            else if (horizontalInput == 0f)
-            {
-                state = State.Idle;
-            }
-            else if (horizontalInput != 0f)
-            {
-                state = State.Run;
-            }
-        }
-    }
-
-    private void StopWallJumping()
-    {
-        isWallJumping = false;
-    }
-
-    private bool IsGrounded()
-    {
-        return Physics2D.OverlapCircle(groundCheck.position, 0.2f, groundLayer);
-    }
-
-    private bool IsWalled()
-    {
-        return Physics2D.OverlapCircle(wallCheck.position, 0.2f, wallLayer);
-    }
-
-    private void Flip()
-    {
-        if (isFacingRight && horizontalInput < 0f || !isFacingRight && horizontalInput > 0f)
-        {
-            isFacingRight = !isFacingRight;
-            transform.Rotate(0, 180, 0);
-        }
-    }
-    
-    public IEnumerator DashTempo ()
+    public IEnumerator DashTempo()
     {
         canDash = false;
         isDashing = true;
@@ -357,5 +293,193 @@ public class MoveFSM : MonoBehaviour
         isDashing = false;
         yield return new WaitForSeconds(dashingCooldown);
         canDash = true;
+    }
+
+    void WallSlide()
+    {
+        animator.Play("WallSlide");
+
+        if (isWallSliding)
+        {
+            rb.velocity = new Vector2(rb.velocity.x, Mathf.Clamp(rb.velocity.y, -wallSlidingSpeed, float.MaxValue));
+        }
+
+        if(isWallSliding && jumpInput && canWallJump)
+        {
+            state = State.WallJump;
+        }
+        else if (!IsGrounded() && !isWallSliding && !isWallJumping)
+        {
+            state = State.Glide;
+        }
+
+        if (IsGrounded())
+        {
+            if (horizontalInput == 0)
+            {
+                state = State.Idle;
+            }
+            else if (jumpInput)
+            {
+                state = State.Jump;
+            }
+            else if (horizontalInput != 0f)
+            {
+                state = State.Run;
+            }
+        }
+    }
+
+    void WallJump()
+    {
+        animator.Play("WallJump");
+
+        wallJumpingDirection = facing;
+
+        isWallJumping = false;
+        wallJumpingDirection = facing;
+        wallJumpingCounter = wallJumpingTime;
+
+        CancelInvoke(nameof(StopWallJump));
+
+        wallJumpingCounter -= Time.deltaTime;
+
+        canWallJump = false;
+        rb.velocity = new Vector2( wallJumpingDirection * wallJumpingPower.x, wallJumpingPower.y);
+        isWallJumping = true;
+        wallJumpingCounter = 0f;
+
+        Invoke(nameof(StopWallJump), wallJumpingDuration);
+
+        StartCoroutine(WallJumpDelay());
+
+        //canWallJump = true;
+
+        if (canDash && dashInput && horizontalInput != 0)
+        {
+            state = State.Dash;
+        }
+        else if (isWallSliding)
+        {
+            state = State.WallSlide;
+        }
+        else if (!IsGrounded())
+        {
+            state = State.Glide;
+        }
+        if (IsGrounded())
+        {
+            if (horizontalInput == 0f)
+            {
+                state = State.Idle;
+            }
+            else if (horizontalInput != 0f)
+            {
+                state = State.Run;
+            }
+        }
+    }
+
+    IEnumerator WallJumpDelay()
+    {
+        yield return new WaitForSeconds(wallJumpCooldown);
+        canWallJump = true;
+    }
+
+    void StopWallJump()
+    {
+        isWallJumping = false; 
+    }
+
+    private bool IsGrounded()
+    {
+        return Physics2D.OverlapCircle(groundCheck.position, 0.1f, groundLayer);
+    }
+
+    private bool IsWalled()
+    {
+        return Physics2D.OverlapCircle(wallCheck.position, 0.2f, wallLayer);
+    }
+
+    private void Shoot()
+    {
+        animator.Play("Shoot");
+
+        StartCoroutine(ShootDelay());
+
+        if (IsGrounded())
+        {
+            if (jumpInput)
+            {
+                state = State.Jump;
+            }
+            else if (horizontalInput != 0f)
+            {
+                state = State.Run;
+            }
+            else if (horizontalInput == 0f)
+            {
+                state = State.Idle;
+            }
+            if (Input.GetKeyDown(KeyCode.E) && mana.manaAmount > 20)
+            {
+                state = State.Shoot;
+            }
+        }
+    }
+
+    public IEnumerator ShootDelay ()
+    {
+        canShoot = false;
+        isShooting = true;
+        float originalSpeed = speed; 
+        speed = 0f;
+        //mana.TrySpend(20);
+        shootingPoint.rotation = gameObject.transform.rotation;
+        Instantiate(bulletPrefab, shootingPoint.position, shootingPoint.rotation);
+        yield return new WaitForSeconds(shootingTime);
+        isShooting = false;
+        speed = originalSpeed;
+        yield return new WaitForSeconds(shootingCooldown);
+        canShoot = true;
+    }
+
+    public class ManaPlay
+    {
+        public const int MANA_MAX = 100;
+
+        public float manaAmount;
+        public float manaRegenAmount;
+
+        public ManaPlay()
+        {
+
+            manaAmount = 0;
+            manaRegenAmount = 7.5f;
+        }
+
+        public void Update()
+        {
+            manaAmount += manaRegenAmount * Time.deltaTime;
+            manaAmount = Mathf.Clamp(manaAmount, 0f, MANA_MAX);
+        }
+
+        public void TrySpend(int amount)
+        {
+            if (manaAmount >= amount)
+            {
+                manaAmount -= amount;
+            }
+        }
+
+        public float GetManaNormalized()
+        {
+            return manaAmount / MANA_MAX;
+        }
+    }
+
+    private void Atk()
+    {
+
     }
 }
