@@ -1,8 +1,9 @@
-using System.Collections;
+﻿using System.Collections;
 using System.Collections.Generic;
 using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.EventSystems;
+using UnityEngine.Rendering.Universal;
 using UnityEngine.UIElements;
 using static Mana;
 
@@ -15,7 +16,6 @@ public class MoveFSM : MonoBehaviour
 
     private bool isWallSliding;
     private float wallSlidingSpeed = 2f;
-    private float wallSlideDelay = 1f;
 
     private bool isWallJumping;
     private float wallJumpingDirection;
@@ -40,12 +40,27 @@ public class MoveFSM : MonoBehaviour
     public GameObject bulletPrefab;
     public Transform shootingPoint;
     private float manaMana;
-    //bool canShoot = true;
     bool isShooting = false;
     float shootingTime = 0.75f;
     float shootingCooldown = 1f;
     public bool canShoot = true;
     public bool shootInput;
+
+    bool atkInput;
+    private float atkRange = 0.5f;
+    public LayerMask enemyLayer;
+    public Transform atkPoint;
+    public float atkRate = 2f;
+    float nextAtkTime = 0f;
+    public bool isAtking;
+
+    private int playerHealth = 5;
+    private SpriteRenderer sprite;
+    private Color normalColor; 
+
+    private float kbForceX= 14f;
+    private float kbForceY = 6f;
+    private bool isKb = false;
 
     [SerializeField] private Rigidbody2D rb;
     [SerializeField] private Transform trans;
@@ -58,7 +73,7 @@ public class MoveFSM : MonoBehaviour
 
     Vector2 moveDirection;
 
-    enum State { Idle, Run, Jump, Glide, Dash, WallSlide, WallJump, Atk, Shoot }
+    enum State { Idle, Run, Jump, Glide, Dash, WallSlide, WallJump, Atk, Shoot, TakeDamage }
 
     State state = State.Idle;
 
@@ -67,6 +82,8 @@ public class MoveFSM : MonoBehaviour
         animator = GetComponent<Animator>();
         trans = GetComponent<Transform>();
         mana = new ManaPlay();
+        sprite = GetComponent<SpriteRenderer>();
+        normalColor = sprite.color;
     }
 
     private void Update()
@@ -90,6 +107,8 @@ public class MoveFSM : MonoBehaviour
         {
             isWallSliding = false;
         }
+
+        Debug.Log(playerHealth);
     }
 
     void FixedUpdate()
@@ -98,9 +117,10 @@ public class MoveFSM : MonoBehaviour
         horizontalInput = Input.GetAxisRaw("Horizontal");
         dashInput = Input.GetKeyDown(KeyCode.LeftShift);
         shootInput = Input.GetKey(KeyCode.E);
+        atkInput = Input.GetKey(KeyCode.Mouse0);
 
-        Debug.Log(isWallJumping); 
-            
+        Debug.Log(isWallJumping);
+
         if (isDashing)
         {
             return;
@@ -117,6 +137,7 @@ public class MoveFSM : MonoBehaviour
             case State.WallJump: WallJump(); break;
             case State.Shoot: Shoot(); break;
             case State.Atk: Atk(); break;
+            case State.TakeDamage: TakeDamage(); break;
         }
 
         moveDirection = new Vector2(horizontalInput, 0).normalized;
@@ -126,7 +147,7 @@ public class MoveFSM : MonoBehaviour
     {
         animator.Play("Idle");
 
-        if (canDash && dashInput && horizontalInput != 0) 
+        if (canDash && dashInput && horizontalInput != 0)
         {
             state = State.Dash;
         }
@@ -141,7 +162,11 @@ public class MoveFSM : MonoBehaviour
             {
                 state = State.Run;
             }
-            if ( shootInput && /* mana.manaAmount > 20 && */ canShoot)
+            else if (atkInput)
+            {
+                state = State.Atk;
+            }
+            if (shootInput && /* mana.manaAmount > 20 && */ canShoot)
             {
                 state = State.Shoot;
             }
@@ -174,6 +199,10 @@ public class MoveFSM : MonoBehaviour
             else if (horizontalInput == 0f)
             {
                 state = State.Idle;
+            }
+            else if (atkInput)
+            {
+                state = State.Atk;
             }
             else if (shootInput && /* mana.manaAmount > 20 && */ canShoot)
             {
@@ -233,7 +262,7 @@ public class MoveFSM : MonoBehaviour
             {
                 state = State.Idle;
             }
-            
+
         }
     }
 
@@ -304,7 +333,7 @@ public class MoveFSM : MonoBehaviour
             rb.velocity = new Vector2(rb.velocity.x, Mathf.Clamp(rb.velocity.y, -wallSlidingSpeed, float.MaxValue));
         }
 
-        if(isWallSliding && jumpInput && canWallJump)
+        if (isWallSliding && jumpInput && canWallJump)
         {
             state = State.WallJump;
         }
@@ -345,15 +374,13 @@ public class MoveFSM : MonoBehaviour
         wallJumpingCounter -= Time.deltaTime;
 
         canWallJump = false;
-        rb.velocity = new Vector2( wallJumpingDirection * wallJumpingPower.x, wallJumpingPower.y);
+        rb.velocity = new Vector2(wallJumpingDirection * wallJumpingPower.x, wallJumpingPower.y);
         isWallJumping = true;
         wallJumpingCounter = 0f;
 
         Invoke(nameof(StopWallJump), wallJumpingDuration);
 
         StartCoroutine(WallJumpDelay());
-
-        //canWallJump = true;
 
         if (canDash && dashInput && horizontalInput != 0)
         {
@@ -388,7 +415,7 @@ public class MoveFSM : MonoBehaviour
 
     void StopWallJump()
     {
-        isWallJumping = false; 
+        isWallJumping = false;
     }
 
     private bool IsGrounded()
@@ -428,11 +455,11 @@ public class MoveFSM : MonoBehaviour
         }
     }
 
-    public IEnumerator ShootDelay ()
+    public IEnumerator ShootDelay()
     {
         canShoot = false;
         isShooting = true;
-        float originalSpeed = speed; 
+        float originalSpeed = speed;
         speed = 0f;
         //mana.TrySpend(20);
         shootingPoint.rotation = gameObject.transform.rotation;
@@ -480,6 +507,127 @@ public class MoveFSM : MonoBehaviour
 
     private void Atk()
     {
+        
+        if (Time.time >= nextAtkTime)
+        {
+            animator.Play("Atk");
+            isAtking = true;
 
+            Collider2D[] hitEnemies = Physics2D.OverlapCircleAll(atkPoint.position, atkRange, enemyLayer);
+
+            foreach (Collider2D enemy in hitEnemies)
+            {
+                enemy.GetComponent<MatheusTest>().TakeDamage(20);
+            }
+            isAtking = false;
+            nextAtkTime = Time.time + 1f / atkRate; 
+        }
+
+        if (IsGrounded())
+        {
+            if (jumpInput)
+            {
+                state = State.Jump;
+            }
+            else if (horizontalInput != 0f)
+            {
+                state = State.Run;
+            }
+            else if (horizontalInput == 0f)
+            {
+                state = State.Idle;
+            }
+            else if (atkInput)
+            {
+                state = State.Atk;
+            }
+            if (shootInput && /* mana.manaAmount > 20 && */ canShoot)
+            {
+                state = State.Shoot;
+            }
+
+        }
+    }
+
+    void OnDrawGizmosSelected()
+    {
+        if (atkPoint == null)
+        {
+            return;
+        }
+
+        Gizmos.DrawWireSphere(atkPoint.position, atkRange);
+    }
+
+    private void OnCollisionEnter2D(Collision2D collision)
+    {
+        if (collision.gameObject.CompareTag("Enemy"))
+        {
+            playerHealth--;
+            state = State.TakeDamage;
+        }
+    }
+
+    void TakeDamage()
+    {
+        StartCoroutine(Damage());
+
+        isKb = true;
+        
+        //A partir daqui é para dar Knockback no Player e ver se ele ainda tem vidas
+
+        if (playerHealth <= 0)
+        {
+            Die();
+        }
+        if (isKb)
+        {
+            if(isFacingRight) 
+            {
+                rb.velocity = new Vector2(-kbForceX, kbForceY);
+                isKb = false;
+            }
+            else if (!isFacingRight)
+            {
+                rb.velocity = new Vector2(kbForceX, kbForceY);
+                isKb = false;
+            }
+        }
+
+        Invoke(nameof(StopKB), 0.15f);
+    }
+
+    public IEnumerator Damage()
+    {
+        animator.Play("TakeDamage");
+
+        for( int i = 0; i < 2; i++ ) 
+        {
+            sprite.color = new Color(0.86f, 0.4f, 0.4f, 0.90f);
+
+            //sprite.enabled = true;
+
+            yield return new WaitForSeconds(0.15f);
+
+            sprite.color = normalColor;
+            
+            //sprite.enabled = false; 
+
+            yield return new WaitForSeconds(0.15f);
+
+            //sprite.enabled = true;
+        }
+    }
+
+    void StopKB()
+    {
+        state = State.Glide;   
+    }
+
+    void Die()
+    {
+        animator.Play("Death");
+        Destroy(gameObject);
     }
 }
+
