@@ -5,18 +5,20 @@ using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.Rendering.Universal;
 using UnityEngine.UIElements;
-using static Mana;
 
 public class MoveFSM : MonoBehaviour
 {
+    [Header("Base Move")]
     private float horizontalInput = 0f;
-    private float speed = 8f;
+    public bool canMove = true;
+    [SerializeField] private float speed = 8f;
     private float jumpingPower = 16f;
     private bool isFacingRight = true;
+    Vector2 moveDirection;
 
+    [Header("Everything related to Wall")]
     private bool isWallSliding;
     private float wallSlidingSpeed = 2f;
-
     private bool isWallJumping;
     private float wallJumpingDirection;
     private Vector2 wallJumpingPower = new Vector2(8.5f, 16f);
@@ -28,6 +30,7 @@ public class MoveFSM : MonoBehaviour
     private readonly float wallJumpingDuration = 0.2f;
     private readonly float wallJumpingTime = 0.2f;
 
+    [Header("Dash")]
     public bool canDash = true;
     private bool isDashing;
     bool jumpInput = false;
@@ -36,16 +39,15 @@ public class MoveFSM : MonoBehaviour
     public float dashingTime = 0.2f;
     public float dashingCooldown = 1f;
 
-    public ManaPlay mana;
+    [Header("Shoot")]
+    public float shootCost = 20f; 
     public GameObject bulletPrefab;
     public Transform shootingPoint;
-    private float manaMana;
-    bool isShooting = false;
     float shootingTime = 0.75f;
-    float shootingCooldown = 1f;
-    public bool canShoot = true;
+    float shootingCooldown = 0.5f;
     public bool shootInput;
 
+    [Header("Melee ATK")]
     bool atkInput;
     private float atkRange = 0.5f;
     public LayerMask enemyLayer;
@@ -54,14 +56,19 @@ public class MoveFSM : MonoBehaviour
     float nextAtkTime = 0f;
     public bool isAtking;
 
+    [Header("Player Health")]
     private int playerHealth = 5;
     private SpriteRenderer sprite;
-    private Color normalColor; 
+    private Color normalColor;
 
+    [Header("Knockback")]
     private float kbForceX= 14f;
     private float kbForceY = 6f;
     private bool isKb = false;
 
+    [Header("Base Components")]
+    [SerializeField] private Transform InteractableCheck;
+    [SerializeField] private LayerMask interactableLayer;
     [SerializeField] private Rigidbody2D rb;
     [SerializeField] private Transform trans;
     [SerializeField] private Transform groundCheck;
@@ -71,7 +78,9 @@ public class MoveFSM : MonoBehaviour
     [SerializeField] private TrailRenderer trail;
     [SerializeField] private Animator animator;
 
-    Vector2 moveDirection;
+    public ManaSystem manaSystem;
+
+    public GameObject placeHolderCajado; 
 
     enum State { Idle, Run, Jump, Glide, Dash, WallSlide, WallJump, Atk, Shoot, TakeDamage }
 
@@ -79,17 +88,15 @@ public class MoveFSM : MonoBehaviour
 
     private void Awake()
     {
+        manaSystem = GetComponent<ManaSystem>();
         animator = GetComponent<Animator>();
         trans = GetComponent<Transform>();
-        mana = new ManaPlay();
         sprite = GetComponent<SpriteRenderer>();
         normalColor = sprite.color;
     }
 
     private void Update()
     {
-        mana.Update();
-
         if (isFacingRight)
         {
             facing = -1;
@@ -108,6 +115,15 @@ public class MoveFSM : MonoBehaviour
             isWallSliding = false;
         }
 
+        if (canMove)
+        {
+            speed = 8; 
+        }
+        else
+        {
+            speed = 0;
+        }
+
         Debug.Log(playerHealth);
     }
 
@@ -119,7 +135,7 @@ public class MoveFSM : MonoBehaviour
         shootInput = Input.GetKey(KeyCode.E);
         atkInput = Input.GetKey(KeyCode.Mouse0);
 
-        Debug.Log(isWallJumping);
+        //Debug.Log(CanInteract());
 
         if (isDashing)
         {
@@ -166,8 +182,9 @@ public class MoveFSM : MonoBehaviour
             {
                 state = State.Atk;
             }
-            if (shootInput && /* mana.manaAmount > 20 && */ canShoot)
+            if (Input.GetKeyDown(KeyCode.E) && manaSystem.currentMana > shootCost)
             {
+                manaSystem.UseAbility(shootCost);
                 state = State.Shoot;
             }
         }
@@ -204,8 +221,9 @@ public class MoveFSM : MonoBehaviour
             {
                 state = State.Atk;
             }
-            else if (shootInput && /* mana.manaAmount > 20 && */ canShoot)
+            if (Input.GetKeyDown(KeyCode.E) && manaSystem.currentMana > shootCost)
             {
+                manaSystem.UseAbility(shootCost);
                 state = State.Shoot;
             }
         }
@@ -448,8 +466,9 @@ public class MoveFSM : MonoBehaviour
             {
                 state = State.Idle;
             }
-            if (Input.GetKeyDown(KeyCode.E) && mana.manaAmount > 20)
+            if (Input.GetKeyDown(KeyCode.E) &&  manaSystem.currentMana > shootCost)
             {
+                manaSystem.UseAbility(shootCost);
                 state = State.Shoot;
             }
         }
@@ -457,52 +476,11 @@ public class MoveFSM : MonoBehaviour
 
     public IEnumerator ShootDelay()
     {
-        canShoot = false;
-        isShooting = true;
-        float originalSpeed = speed;
-        speed = 0f;
-        //mana.TrySpend(20);
+        canMove = false;  
         shootingPoint.rotation = gameObject.transform.rotation;
         Instantiate(bulletPrefab, shootingPoint.position, shootingPoint.rotation);
         yield return new WaitForSeconds(shootingTime);
-        isShooting = false;
-        speed = originalSpeed;
-        yield return new WaitForSeconds(shootingCooldown);
-        canShoot = true;
-    }
-
-    public class ManaPlay
-    {
-        public const int MANA_MAX = 100;
-
-        public float manaAmount;
-        public float manaRegenAmount;
-
-        public ManaPlay()
-        {
-
-            manaAmount = 0;
-            manaRegenAmount = 7.5f;
-        }
-
-        public void Update()
-        {
-            manaAmount += manaRegenAmount * Time.deltaTime;
-            manaAmount = Mathf.Clamp(manaAmount, 0f, MANA_MAX);
-        }
-
-        public void TrySpend(int amount)
-        {
-            if (manaAmount >= amount)
-            {
-                manaAmount -= amount;
-            }
-        }
-
-        public float GetManaNormalized()
-        {
-            return manaAmount / MANA_MAX;
-        }
+        canMove = true;
     }
 
     private void Atk()
@@ -510,17 +488,23 @@ public class MoveFSM : MonoBehaviour
         
         if (Time.time >= nextAtkTime)
         {
+            
             animator.Play("Atk");
             isAtking = true;
+
+            placeHolderCajado.SetActive(true);
 
             Collider2D[] hitEnemies = Physics2D.OverlapCircleAll(atkPoint.position, atkRange, enemyLayer);
 
             foreach (Collider2D enemy in hitEnemies)
             {
-                enemy.GetComponent<MatheusTest>().TakeDamage(20);
+                enemy.GetComponent<EnemyFSM>().TakeDamage(20);
             }
             isAtking = false;
-            nextAtkTime = Time.time + 1f / atkRate; 
+
+            nextAtkTime = Time.time + 1f / atkRate;
+
+             Invoke("CajadoDesinvocado", 0.5f);
         }
 
         if (IsGrounded())
@@ -541,8 +525,9 @@ public class MoveFSM : MonoBehaviour
             {
                 state = State.Atk;
             }
-            if (shootInput && /* mana.manaAmount > 20 && */ canShoot)
+            if (Input.GetKeyDown(KeyCode.E) && manaSystem.CanAffordAbility(shootCost))
             {
+                manaSystem.UseAbility(shootCost);
                 state = State.Shoot;
             }
 
@@ -557,6 +542,8 @@ public class MoveFSM : MonoBehaviour
         }
 
         Gizmos.DrawWireSphere(atkPoint.position, atkRange);
+
+        //Gizmos.DrawWireSphere(InteractableCheck.position, 2f);
     }
 
     private void OnCollisionEnter2D(Collision2D collision)
@@ -628,6 +615,16 @@ public class MoveFSM : MonoBehaviour
     {
         animator.Play("Death");
         Destroy(gameObject);
+    }
+
+    /*private bool CanInteract()
+    {
+        return Physics2D.OverlapCircle(InteractableCheck.position, 2f, interactableLayer);
+    }*/
+
+    void CajadoDesinvocado()
+    {
+        placeHolderCajado.SetActive(false);
     }
 }
 

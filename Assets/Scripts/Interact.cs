@@ -17,7 +17,7 @@ public class Interact : MonoBehaviour
     void Update()
     {
         //Debug.Log(sprite.color);
-        //Debug.Log(CanInteract());
+        Debug.Log(CanInteract());
 
         if (CanInteract())
         {
