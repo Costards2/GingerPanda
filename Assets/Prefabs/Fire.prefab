@@ -13,7 +13,7 @@ GameObject:
   - component: {fileID: -4632135782119736754}
   - component: {fileID: -8862098725855148489}
   - component: {fileID: 4344592554993509366}
-  m_Layer: 0
+  m_Layer: 10
   m_Name: Fire
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -33,7 +33,7 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
-  m_RootOrder: 8
+  m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!212 &6614564864651042009
 SpriteRenderer:
@@ -101,7 +101,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   speed: 15
   rb: {fileID: -8862098725855148489}
-  scale: 0
 --- !u!50 &-8862098725855148489
 Rigidbody2D:
   serializedVersion: 4

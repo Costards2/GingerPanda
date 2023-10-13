@@ -2,7 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class MatheusTest : MonoBehaviour
+public class EnemyFSM : MonoBehaviour
 {
     public int maxHealth = 100;
     int currentHealth; 
