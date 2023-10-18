@@ -57,7 +57,7 @@ public class MoveFSM : MonoBehaviour
     public bool isAtking;
 
     [Header("Player Health")]
-    private int playerHealth = 5;
+    private int playerHealth = 3;
     private SpriteRenderer sprite;
     private Color normalColor;
 
