@@ -57,9 +57,19 @@ public class MoveFSM : MonoBehaviour
     public bool isAtking;
 
     [Header("Player Health")]
-    private int playerHealth = 3;
+    public int playerHealth = 3;
     private SpriteRenderer sprite;
     private Color normalColor;
+
+    [Header("Lives and Leafs")]
+    public GameObject Life1;
+    public GameObject Life2;
+    public GameObject Life3;
+    public GameObject Leaf1;
+    public GameObject Leaf2;
+    public GameObject Leaf3;
+    public bool leafInput;
+    private int leafs = 1; 
 
     [Header("Knockback")]
     private float kbForceX= 14f;
@@ -134,6 +144,12 @@ public class MoveFSM : MonoBehaviour
         dashInput = Input.GetKeyDown(KeyCode.LeftShift);
         shootInput = Input.GetKey(KeyCode.E);
         atkInput = Input.GetKey(KeyCode.Mouse0);
+        leafInput = Input.GetKey(KeyCode.Q);
+
+        if (leafInput && leafs > 0 && playerHealth < 3)
+        {
+            Heal();
+        }
 
         //Debug.Log(CanInteract());
 
@@ -488,7 +504,6 @@ public class MoveFSM : MonoBehaviour
         
         if (Time.time >= nextAtkTime)
         {
-            
             animator.Play("Atk");
             isAtking = true;
 
@@ -548,10 +563,45 @@ public class MoveFSM : MonoBehaviour
 
     private void OnCollisionEnter2D(Collision2D collision)
     {
+
         if (collision.gameObject.CompareTag("Enemy"))
         {
             playerHealth--;
+
+            if (playerHealth == 2)
+            {
+                Life1.SetActive(false);
+            }
+            else if (playerHealth == 1)
+            {
+                Life2.SetActive(false);
+            }
+            else if (playerHealth == 0)
+            {
+                Life3.SetActive(false);
+            }
             state = State.TakeDamage;
+        }
+    }
+
+    private void OnTrigger2DEnter(Collider2D other)
+    {
+        if (other.gameObject.CompareTag("Leaf") && leafs < 3)
+        {
+            leafs++;
+
+            if (leafs == 1)
+            {
+                Leaf1.SetActive(true);
+            }
+            else if (leafs == 2)
+            {
+                Leaf2.SetActive(true);
+            }
+            else if (leafs == 3)
+            {
+                Leaf3.SetActive(true);
+            }
         }
     }
 
@@ -625,6 +675,37 @@ public class MoveFSM : MonoBehaviour
     void CajadoDesinvocado()
     {
         placeHolderCajado.SetActive(false);
+    }
+
+    void Heal()
+    {
+
+        if (playerHealth == 2)
+        {
+            Life1.SetActive(true);
+        }
+        else if (leafs == 1)
+        {
+            Life2.SetActive(true);
+        }
+
+        playerHealth++;
+
+        if (leafs == 3)
+        {
+            Leaf3.SetActive(false);
+        }
+        else if (leafs == 2)
+        {
+            Leaf2.SetActive(false);
+        }
+        else if (leafs == 1)
+        {
+            Leaf1.SetActive(false);
+        }
+
+        leafs--; 
+
     }
 }
 
