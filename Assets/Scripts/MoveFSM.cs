@@ -9,13 +9,14 @@ using UnityEngine.UIElements;
 public class MoveFSM : MonoBehaviour
 {
     [Header("Base Move")]
-    private float horizontalInput = 0f;
+    public float horizontalInput = 0f;
     public bool canMove = true;
     [SerializeField] private float speed = 8f;
     private float jumpingPower = 16f;
     private bool isFacingRight = true;
     Vector2 moveDirection;
-
+    private bool canJump = true;
+  
     [Header("Everything related to Wall")]
     private bool isWallSliding;
     private float wallSlidingSpeed = 2f;
@@ -61,6 +62,8 @@ public class MoveFSM : MonoBehaviour
     private SpriteRenderer sprite;
     private Color normalColor;
 
+    //Criar um Script separado para a UI seria o Ideal (eu acho)
+
     [Header("Lives and Leafs")]
     public GameObject Life1;
     public GameObject Life2;
@@ -87,6 +90,8 @@ public class MoveFSM : MonoBehaviour
     [SerializeField] private LayerMask wallLayer;
     [SerializeField] private TrailRenderer trail;
     [SerializeField] private Animator animator;
+    [SerializeField] private CapsuleCollider2D playerCollider;
+    private GameObject goThroughPlatform;
 
     public ManaSystem manaSystem;
 
@@ -107,6 +112,7 @@ public class MoveFSM : MonoBehaviour
 
     private void Update()
     {
+
         if (isFacingRight)
         {
             facing = -1;
@@ -134,7 +140,20 @@ public class MoveFSM : MonoBehaviour
             speed = 0;
         }
 
-        Debug.Log(playerHealth);
+        //Fazer com que segurar o JumoInput não faça o player pular infinitamente
+        if (Input.GetKeyUp(KeyCode.Space))
+        {
+            canJump = true;
+        }
+
+        //Essa parte da plataforma está fora do estado de maquina pois não tem animação e não está funcionando 
+        /*if (Input.GetKeyDown(KeyCode.S) || Input.GetKeyDown(KeyCode.DownArrow))
+        {
+            if (goThroughPlatform != null)
+            {
+                StartCoroutine(DisableCollision());
+            }
+        }*/
     }
 
     void FixedUpdate()
@@ -150,8 +169,6 @@ public class MoveFSM : MonoBehaviour
         {
             Heal();
         }
-
-        //Debug.Log(CanInteract());
 
         if (isDashing)
         {
@@ -173,6 +190,7 @@ public class MoveFSM : MonoBehaviour
         }
 
         moveDirection = new Vector2(horizontalInput, 0).normalized;
+
     }
 
     void IdleState()
@@ -186,7 +204,7 @@ public class MoveFSM : MonoBehaviour
 
         if (IsGrounded())
         {
-            if (jumpInput)
+            if (jumpInput && canJump)
             {
                 state = State.Jump;
             }
@@ -225,7 +243,7 @@ public class MoveFSM : MonoBehaviour
 
         if (IsGrounded())
         {
-            if (jumpInput)
+            if (jumpInput && canJump)
             {
                 state = State.Jump;
             }
@@ -249,9 +267,11 @@ public class MoveFSM : MonoBehaviour
     {
         animator.Play("Jump");
 
+        canJump = false;
+
         Flip();
 
-        rb.velocity = speed * horizontalInput * Vector2.right + jumpingPower * Vector2.up;
+        rb.velocity = Vector2.up * jumpingPower;
 
         if (horizontalInput != 0f && IsGrounded())
         {
@@ -267,6 +287,15 @@ public class MoveFSM : MonoBehaviour
         }
 
         state = State.Glide;
+    }
+
+    private IEnumerator DisableCollision()
+    {
+        BoxCollider2D platformCollider = goThroughPlatform.GetComponent<BoxCollider2D>();
+
+        Physics2D.IgnoreCollision(playerCollider, platformCollider, true);
+        yield return new WaitForSeconds(0.25f);
+        Physics2D.IgnoreCollision(playerCollider, platformCollider, false);
     }
 
     void GlideState()
@@ -319,7 +348,7 @@ public class MoveFSM : MonoBehaviour
 
         if (IsGrounded())
         {
-            if (jumpInput)
+            if (jumpInput && canJump)
             {
                 state = State.Jump;
             }
@@ -382,7 +411,7 @@ public class MoveFSM : MonoBehaviour
             {
                 state = State.Idle;
             }
-            else if (jumpInput)
+            else if (jumpInput && canJump)
             {
                 state = State.Jump;
             }
@@ -454,7 +483,7 @@ public class MoveFSM : MonoBehaviour
 
     private bool IsGrounded()
     {
-        return Physics2D.OverlapCircle(groundCheck.position, 0.1f, groundLayer);
+        return Physics2D.OverlapBox(groundCheck.position, new Vector2(0.1f, 0.1f) ,0.01f, groundLayer);
     }
 
     private bool IsWalled()
@@ -470,7 +499,7 @@ public class MoveFSM : MonoBehaviour
 
         if (IsGrounded())
         {
-            if (jumpInput)
+            if (jumpInput && canJump)
             {
                 state = State.Jump;
             }
@@ -558,14 +587,23 @@ public class MoveFSM : MonoBehaviour
 
         Gizmos.DrawWireSphere(atkPoint.position, atkRange);
 
+        Gizmos.DrawWireSphere(groundCheck.position, atkRange);
+
         //Gizmos.DrawWireSphere(InteractableCheck.position, 2f);
     }
 
     private void OnCollisionEnter2D(Collision2D collision)
     {
 
+        /*if (collision.gameObject.CompareTag("GoThroughPlatform"))
+        {
+            Debug.Log(goThroughPlatform);
+            goThroughPlatform = collision.gameObject; 
+        }*/
+
         if (collision.gameObject.CompareTag("Enemy"))
         {
+
             playerHealth--;
 
             if (playerHealth == 2)
@@ -580,7 +618,15 @@ public class MoveFSM : MonoBehaviour
             {
                 Life3.SetActive(false);
             }
-            state = State.TakeDamage;
+            state = State.TakeDamage;   
+        }
+    }
+
+    private void OnCollisionExit2D(Collision2D collision)
+    {
+        if (collision.gameObject.CompareTag("GoThroughPlatform"))
+        {
+            goThroughPlatform = null;
         }
     }
 

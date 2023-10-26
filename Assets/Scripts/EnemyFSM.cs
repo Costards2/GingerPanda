@@ -5,16 +5,16 @@ using UnityEngine;
 public class EnemyFSM : MonoBehaviour
 {
     public int maxHealth = 100;
-    int currentHealth; 
+    int currentHealth;
 
     void Start()
     {
-        currentHealth = maxHealth; 
+        currentHealth = maxHealth;
     }
 
     void Update()
     {
-        
+
     }
 
     public void TakeDamage(int damage)
@@ -23,11 +23,11 @@ public class EnemyFSM : MonoBehaviour
 
         //Hurt anim 
 
-        if(currentHealth < 0) 
+        if (currentHealth < 0)
         {
-            Die(); 
+            Die();
         }
-        
+
     }
 
     void Die()
@@ -35,5 +35,14 @@ public class EnemyFSM : MonoBehaviour
         //Die anim
 
         Destroy(gameObject);
+    }
+
+    private void OnCollisionEnter2D(Collision2D collision)
+    {
+
+        if (collision.gameObject.CompareTag("Projectile"))
+        {
+            TakeDamage(20);
+        }
     }
 }
