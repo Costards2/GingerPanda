@@ -47,8 +47,10 @@ public class MoveFSM : MonoBehaviour
     float shootingTime = 0.75f;
     float shootingCooldown = 0.5f;
     public bool shootInput;
+    public bool canShoot = true;
+    public bool shootCooldown;
 
-    [Header("Melee ATK")]
+   [Header("Melee ATK")]
     bool atkInput;
     private float atkRange = 0.5f;
     public LayerMask enemyLayer;
@@ -94,8 +96,6 @@ public class MoveFSM : MonoBehaviour
     private GameObject goThroughPlatform;
 
     public ManaSystem manaSystem;
-
-    public GameObject placeHolderCajado; 
 
     enum State { Idle, Run, Jump, Glide, Dash, WallSlide, WallJump, Atk, Shoot, TakeDamage }
 
@@ -146,23 +146,20 @@ public class MoveFSM : MonoBehaviour
             canJump = true;
         }
 
-        //Essa parte da plataforma está fora do estado de maquina pois não tem animação e não está funcionando 
-        /*if (Input.GetKeyDown(KeyCode.S) || Input.GetKeyDown(KeyCode.DownArrow))
-        {
-            if (goThroughPlatform != null)
-            {
-                StartCoroutine(DisableCollision());
-            }
-        }*/
+        //Fazer com que segurar o ShootInput não faça o player metralhar (Com a corrotina ele n é mais necessário)
+        //if (Input.GetKeyUp(KeyCode.L))
+        //{
+            //canShoot = true;
+        //}
     }
 
     void FixedUpdate()
     {
         jumpInput = Input.GetKey(KeyCode.Space);
         horizontalInput = Input.GetAxisRaw("Horizontal");
-        dashInput = Input.GetKeyDown(KeyCode.LeftShift);
-        shootInput = Input.GetKey(KeyCode.E);
-        atkInput = Input.GetKey(KeyCode.Mouse0);
+        dashInput = Input.GetKey(KeyCode.LeftShift);
+        shootInput = Input.GetKeyDown(KeyCode.L);
+        atkInput = Input.GetKey(KeyCode.K);
         leafInput = Input.GetKey(KeyCode.Q);
 
         if (leafInput && leafs > 0 && playerHealth < 3)
@@ -216,9 +213,8 @@ public class MoveFSM : MonoBehaviour
             {
                 state = State.Atk;
             }
-            if (Input.GetKeyDown(KeyCode.E) && manaSystem.currentMana > shootCost)
+            if (shootInput && manaSystem.currentMana > shootCost && canShoot && !shootCooldown)
             {
-                manaSystem.UseAbility(shootCost);
                 state = State.Shoot;
             }
         }
@@ -255,9 +251,8 @@ public class MoveFSM : MonoBehaviour
             {
                 state = State.Atk;
             }
-            if (Input.GetKeyDown(KeyCode.E) && manaSystem.currentMana > shootCost)
+            if (shootInput && manaSystem.currentMana > shootCost && canShoot && !shootCooldown)
             {
-                manaSystem.UseAbility(shootCost);
                 state = State.Shoot;
             }
         }
@@ -441,6 +436,14 @@ public class MoveFSM : MonoBehaviour
         isWallJumping = true;
         wallJumpingCounter = 0f;
 
+        if(transform.localScale.x != wallJumpingDirection)
+        {
+            isFacingRight = !isFacingRight;
+            Vector2 localScale = transform.localScale;
+            localScale.x *= -1;
+            transform.localScale = localScale;
+        }
+
         Invoke(nameof(StopWallJump), wallJumpingDuration);
 
         StartCoroutine(WallJumpDelay());
@@ -495,6 +498,8 @@ public class MoveFSM : MonoBehaviour
     {
         animator.Play("Shoot");
 
+        manaSystem.UseAbility(shootCost);
+
         StartCoroutine(ShootDelay());
 
         if (IsGrounded())
@@ -511,9 +516,8 @@ public class MoveFSM : MonoBehaviour
             {
                 state = State.Idle;
             }
-            if (Input.GetKeyDown(KeyCode.E) &&  manaSystem.currentMana > shootCost)
+            if (shootInput &&  manaSystem.currentMana > shootCost && canShoot)
             {
-                manaSystem.UseAbility(shootCost);
                 state = State.Shoot;
             }
         }
@@ -521,10 +525,12 @@ public class MoveFSM : MonoBehaviour
 
     public IEnumerator ShootDelay()
     {
-        canMove = false;  
+        shootCooldown = true;
+        canMove = false;
         shootingPoint.rotation = gameObject.transform.rotation;
         Instantiate(bulletPrefab, shootingPoint.position, shootingPoint.rotation);
         yield return new WaitForSeconds(shootingTime);
+        shootCooldown = false;
         canMove = true;
     }
 
@@ -536,8 +542,6 @@ public class MoveFSM : MonoBehaviour
             animator.Play("Atk");
             isAtking = true;
 
-            placeHolderCajado.SetActive(true);
-
             Collider2D[] hitEnemies = Physics2D.OverlapCircleAll(atkPoint.position, atkRange, enemyLayer);
 
             foreach (Collider2D enemy in hitEnemies)
@@ -547,8 +551,6 @@ public class MoveFSM : MonoBehaviour
             isAtking = false;
 
             nextAtkTime = Time.time + 1f / atkRate;
-
-             Invoke("CajadoDesinvocado", 0.5f);
         }
 
         if (IsGrounded())
@@ -717,11 +719,6 @@ public class MoveFSM : MonoBehaviour
     {
         return Physics2D.OverlapCircle(InteractableCheck.position, 2f, interactableLayer);
     }*/
-
-    void CajadoDesinvocado()
-    {
-        placeHolderCajado.SetActive(false);
-    }
 
     void Heal()
     {
