@@ -4,10 +4,11 @@ using UnityEngine;
 
 public class Leaf : MonoBehaviour
 {
-    private void OnTrigger2DEnter(Collider2D other)
+    private void OnTriggerEnter2D(Collider2D other)
     {
         if (other.CompareTag("Player"))
         {
+            other.gameObject.GetComponent<MoveFSM>().AddLeaf();
             Destroy(gameObject);
         }
     }

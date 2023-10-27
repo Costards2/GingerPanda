@@ -101,6 +101,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   speed: 15
   rb: {fileID: -8862098725855148489}
+  target: Enemy
 --- !u!50 &-8862098725855148489
 Rigidbody2D:
   serializedVersion: 4
