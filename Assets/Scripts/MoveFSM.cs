@@ -82,6 +82,7 @@ public class MoveFSM : MonoBehaviour
     private bool isKb = false;
 
     [Header("Base Components")]
+    public GameObject player; 
     [SerializeField] private Transform InteractableCheck;
     [SerializeField] private LayerMask interactableLayer;
     [SerializeField] private Rigidbody2D rb;
@@ -96,6 +97,8 @@ public class MoveFSM : MonoBehaviour
     private GameObject goThroughPlatform;
 
     public ManaSystem manaSystem;
+
+    Vector2 vertical;
 
     enum State { Idle, Run, Jump, Glide, Dash, WallSlide, WallJump, Atk, Shoot, TakeDamage }
 
@@ -112,6 +115,12 @@ public class MoveFSM : MonoBehaviour
 
     private void Update()
     {
+        jumpInput = Input.GetKey(KeyCode.Space);
+        horizontalInput = Input.GetAxisRaw("Horizontal");
+        dashInput = Input.GetKey(KeyCode.LeftShift);
+        shootInput = Input.GetKeyDown(KeyCode.L);
+        atkInput = Input.GetKey(KeyCode.K);
+        leafInput = Input.GetKey(KeyCode.Q);
 
         if (isFacingRight)
         {
@@ -155,13 +164,6 @@ public class MoveFSM : MonoBehaviour
 
     void FixedUpdate()
     {
-        jumpInput = Input.GetKey(KeyCode.Space);
-        horizontalInput = Input.GetAxisRaw("Horizontal");
-        dashInput = Input.GetKey(KeyCode.LeftShift);
-        shootInput = Input.GetKeyDown(KeyCode.L);
-        atkInput = Input.GetKey(KeyCode.K);
-        leafInput = Input.GetKey(KeyCode.Q);
-
         if (leafInput && leafs > 0 && playerHealth < 3)
         {
             Heal();
@@ -249,10 +251,12 @@ public class MoveFSM : MonoBehaviour
             }
             else if (atkInput)
             {
+                rb.velocity = Vector2.zero;
                 state = State.Atk;
             }
             if (shootInput && manaSystem.currentMana > shootCost && canShoot && !shootCooldown)
             {
+                rb.velocity = Vector2.zero;
                 state = State.Shoot;
             }
         }
@@ -439,9 +443,10 @@ public class MoveFSM : MonoBehaviour
         if(transform.localScale.x != wallJumpingDirection)
         {
             isFacingRight = !isFacingRight;
-            Vector2 localScale = transform.localScale;
-            localScale.x *= -1;
-            transform.localScale = localScale;
+            transform.Rotate(0, 180, 0);
+            //Vector2 localScale = transform.localScale;
+            //localScale.x *= -1;
+            //transform.localScale = localScale;
         }
 
         Invoke(nameof(StopWallJump), wallJumpingDuration);
@@ -494,7 +499,7 @@ public class MoveFSM : MonoBehaviour
         return Physics2D.OverlapCircle(wallCheck.position, 0.2f, wallLayer);
     }
 
-    private void Shoot()
+    void Shoot()
     {
         animator.Play("Shoot");
 
@@ -632,27 +637,6 @@ public class MoveFSM : MonoBehaviour
         }
     }
 
-    private void OnTrigger2DEnter(Collider2D other)
-    {
-        if (other.gameObject.CompareTag("Leaf") && leafs < 3)
-        {
-            leafs++;
-
-            if (leafs == 1)
-            {
-                Leaf1.SetActive(true);
-            }
-            else if (leafs == 2)
-            {
-                Leaf2.SetActive(true);
-            }
-            else if (leafs == 3)
-            {
-                Leaf3.SetActive(true);
-            }
-        }
-    }
-
     void TakeDamage()
     {
         StartCoroutine(Damage());
@@ -719,6 +703,29 @@ public class MoveFSM : MonoBehaviour
     {
         return Physics2D.OverlapCircle(InteractableCheck.position, 2f, interactableLayer);
     }*/
+
+    public void AddLeaf()
+    {
+        leafs++;
+
+        if (leafs == 1)
+        {
+            Leaf1.SetActive(true);
+        }
+        else if (leafs == 2)
+        {
+            Leaf2.SetActive(true);
+        }
+        else if (leafs == 3)
+        {
+            Leaf3.SetActive(true);
+        }
+
+        if (leafs > 3)
+        {
+            leafs--;
+        }
+    }
 
     void Heal()
     {
