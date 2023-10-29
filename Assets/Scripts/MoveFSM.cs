@@ -74,7 +74,7 @@ public class MoveFSM : MonoBehaviour
     public GameObject Leaf2;
     public GameObject Leaf3;
     public bool leafInput;
-    private int leafs = 1; 
+    private int leafs = 0; 
 
     [Header("Knockback")]
     private float kbForceX= 14f;
@@ -154,12 +154,6 @@ public class MoveFSM : MonoBehaviour
         {
             canJump = true;
         }
-
-        //Fazer com que segurar o ShootInput não faça o player metralhar (Com a corrotina ele n é mais necessário)
-        //if (Input.GetKeyUp(KeyCode.L))
-        //{
-            //canShoot = true;
-        //}
     }
 
     void FixedUpdate()
@@ -360,7 +354,7 @@ public class MoveFSM : MonoBehaviour
                 state = State.Run;
             }
         }
-        else if (/* horizontalInput != 0f && */ !IsGrounded())
+        else if (!IsGrounded())
         {
             state = State.Glide;
         }
@@ -444,9 +438,6 @@ public class MoveFSM : MonoBehaviour
         {
             isFacingRight = !isFacingRight;
             transform.Rotate(0, 180, 0);
-            //Vector2 localScale = transform.localScale;
-            //localScale.x *= -1;
-            //transform.localScale = localScale;
         }
 
         Invoke(nameof(StopWallJump), wallJumpingDuration);
@@ -595,19 +586,10 @@ public class MoveFSM : MonoBehaviour
         Gizmos.DrawWireSphere(atkPoint.position, atkRange);
 
         Gizmos.DrawWireSphere(groundCheck.position, atkRange);
-
-        //Gizmos.DrawWireSphere(InteractableCheck.position, 2f);
     }
 
     private void OnCollisionEnter2D(Collision2D collision)
     {
-
-        /*if (collision.gameObject.CompareTag("GoThroughPlatform"))
-        {
-            Debug.Log(goThroughPlatform);
-            goThroughPlatform = collision.gameObject; 
-        }*/
-
         if (collision.gameObject.CompareTag("Enemy"))
         {
 
