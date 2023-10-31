@@ -22,7 +22,7 @@ public class MoveFSM : MonoBehaviour
     private float wallSlidingSpeed = 2f;
     private bool isWallJumping;
     private float wallJumpingDirection;
-    private Vector2 wallJumpingPower = new Vector2(8.5f, 16f);
+    private Vector2 wallJumpingPower = new Vector2(9.5f, 16f);
     public float facing = 0;
     bool canWallJump = true;
     public float wallJumpTime = 0.3f;
@@ -131,15 +131,6 @@ public class MoveFSM : MonoBehaviour
             facing = 1;
         }
 
-        if (horizontalInput != 0 && IsWalled() && !IsGrounded())
-        {
-            isWallSliding = true;
-        }
-        else
-        {
-            isWallSliding = false;
-        }
-
         if (canMove)
         {
             speed = 8; 
@@ -158,6 +149,7 @@ public class MoveFSM : MonoBehaviour
 
     void FixedUpdate()
     {
+        //Seria interessante crira mais um estado para o curar
         if (leafInput && leafs > 0 && playerHealth < 3)
         {
             Heal();
@@ -232,7 +224,7 @@ public class MoveFSM : MonoBehaviour
         {
             state = State.Dash;
         }
-        else if (isWallSliding)
+        else if (IsWalled() && !IsGrounded())
         {
             state = State.WallSlide;
         }
@@ -284,7 +276,7 @@ public class MoveFSM : MonoBehaviour
         {
             state = State.Dash;
         }
-        else if (isWallSliding)
+        else if (IsWalled() && !IsGrounded())
         {
             state = State.WallSlide;
         }
@@ -316,7 +308,7 @@ public class MoveFSM : MonoBehaviour
         {
             state = State.Dash;
         }
-        else if (isWallSliding)
+        else if (IsWalled() && !IsGrounded())
         {
             state = State.WallSlide;
         }
@@ -371,7 +363,7 @@ public class MoveFSM : MonoBehaviour
         {
             state = State.Glide;
         }
-        else if (isWallSliding)
+        else if (IsWalled() && !IsGrounded())
         {
             state = State.WallSlide;
         }
@@ -396,35 +388,16 @@ public class MoveFSM : MonoBehaviour
     void WallSlide()
     {
         animator.Play("WallSlide");
+   
+        rb.velocity = new Vector2(rb.velocity.x, Mathf.Clamp(rb.velocity.y, -wallSlidingSpeed, float.MaxValue));
 
-        if (isWallSliding)
-        {
-            rb.velocity = new Vector2(rb.velocity.x, Mathf.Clamp(rb.velocity.y, -wallSlidingSpeed, float.MaxValue));
-        }
-
-        if (isWallSliding && jumpInput && canWallJump)
-        {
-            state = State.WallJump;
-        }
-        else if (!IsGrounded() && !isWallSliding && !isWallJumping)
+        if (horizontalInput == facing)
         {
             state = State.Glide;
         }
-
-        if (IsGrounded())
+        else if (jumpInput && canWallJump)
         {
-            if (horizontalInput == 0)
-            {
-                state = State.Idle;
-            }
-            else if (jumpInput && canJump)
-            {
-                state = State.Jump;
-            }
-            else if (horizontalInput != 0f)
-            {
-                state = State.Run;
-            }
+            state = State.WallJump;
         }
     }
 
@@ -432,22 +405,16 @@ public class MoveFSM : MonoBehaviour
     {
         animator.Play("WallJump");
 
-        wallJumpingDirection = facing;
-
-        isWallJumping = false;
+        isWallJumping = true;
         wallJumpingDirection = facing;
         wallJumpingCounter = wallJumpingTime;
-
-        CancelInvoke(nameof(StopWallJump));
-
         wallJumpingCounter -= Time.deltaTime;
 
-        canWallJump = false;
         rb.velocity = new Vector2(wallJumpingDirection * wallJumpingPower.x, wallJumpingPower.y);
-        isWallJumping = true;
+
         wallJumpingCounter = 0f;
 
-        if(transform.localScale.x != wallJumpingDirection)
+        if (transform.localScale.x != wallJumpingDirection)
         {
             isFacingRight = !isFacingRight;
             transform.Rotate(0, 180, 0);
@@ -461,24 +428,9 @@ public class MoveFSM : MonoBehaviour
         {
             state = State.Dash;
         }
-        else if (isWallSliding)
-        {
-            state = State.WallSlide;
-        }
         else if (!IsGrounded())
         {
             state = State.Glide;
-        }
-        if (IsGrounded())
-        {
-            if (horizontalInput == 0f)
-            {
-                state = State.Idle;
-            }
-            else if (horizontalInput != 0f)
-            {
-                state = State.Run;
-            }
         }
     }
 
