@@ -194,6 +194,10 @@ public class MoveFSM : MonoBehaviour
         {
             state = State.Dash;
         }
+        else if (rb.velocity.y < -0.1)
+        {
+            state = State.Glide;
+        }
 
         if (IsGrounded())
         {
@@ -232,6 +236,10 @@ public class MoveFSM : MonoBehaviour
         {
             state = State.WallSlide;
         }
+        else if (rb.velocity.y < -0.1)
+        {
+            state = State.Glide;
+        }
 
         if (IsGrounded())
         {
@@ -266,6 +274,8 @@ public class MoveFSM : MonoBehaviour
 
         rb.velocity = Vector2.up * jumpingPower;
 
+        rb.velocity = rb.velocity.y * Vector2.up + speed * horizontalInput * Vector2.right;
+
         if (horizontalInput != 0f && IsGrounded())
         {
             state = State.Run;
@@ -293,11 +303,14 @@ public class MoveFSM : MonoBehaviour
 
     void GlideState()
     {
-        animator.Play("Fall");
-
         Flip();
 
         rb.velocity = rb.velocity.y * Vector2.up + speed * horizontalInput * Vector2.right;
+
+        if (rb.velocity.y < -0.1)
+        {
+            animator.Play("Fall");
+        }
 
         if (canDash && dashInput && horizontalInput != 0)
         {
