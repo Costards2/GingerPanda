@@ -1,10 +1,10 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
-using Unity.VisualScripting;
+using UnityEditor.Rendering;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.Rendering.Universal;
-using UnityEngine.UIElements;
+using UnityEngine.UI;
 
 public class MoveFSM : MonoBehaviour
 {
@@ -16,13 +16,14 @@ public class MoveFSM : MonoBehaviour
     private bool isFacingRight = true;
     Vector2 moveDirection;
     private bool canJump = true;
+    public bool doNothing = false;
   
     [Header("Everything related to Wall")]
-    private bool isWallSliding;
-    private float wallSlidingSpeed = 2f;
+    private readonly bool isWallSliding;
+    private readonly float wallSlidingSpeed = 2f;
     private bool isWallJumping;
     private float wallJumpingDirection;
-    private Vector2 wallJumpingPower = new Vector2(9.5f, 16f);
+    private Vector2 wallJumpingPower = new(9.5f, 16f);
     public float facing = 0;
     bool canWallJump = true;
     public float wallJumpTime = 0.3f;
@@ -44,15 +45,15 @@ public class MoveFSM : MonoBehaviour
     public float shootCost = 20f; 
     public GameObject bulletPrefab;
     public Transform shootingPoint;
-    float shootingTime = 0.75f;
-    float shootingCooldown = 0.5f;
+    readonly float shootingTime = 0.75f;
+    readonly float shootingCooldown = 0.5f;
     public bool shootInput;
     public bool canShoot = true;
     public bool shootCooldown;
 
    [Header("Melee ATK")]
     bool atkInput;
-    private float atkRange = 0.5f;
+    private readonly float atkRange = 0.5f;
     public LayerMask enemyLayer;
     public Transform atkPoint;
     public float atkRate = 2f;
@@ -63,6 +64,7 @@ public class MoveFSM : MonoBehaviour
     public int playerHealth = 3;
     private SpriteRenderer sprite;
     private Color normalColor;
+    private Color normalColorLives;
 
     //Criar um Script separado para a UI seria o Ideal (eu acho)
 
@@ -77,8 +79,8 @@ public class MoveFSM : MonoBehaviour
     private int leafs = 0; 
 
     [Header("Knockback")]
-    private float kbForceX= 14f;
-    private float kbForceY = 6f;
+    private readonly float kbForceX= 14f;
+    private readonly float kbForceY = 6f;
     private bool isKb = false;
 
     [Header("Base Components")]
@@ -95,12 +97,11 @@ public class MoveFSM : MonoBehaviour
     [SerializeField] private Animator animator;
     [SerializeField] private CapsuleCollider2D playerCollider;
     private GameObject goThroughPlatform;
-
     public ManaSystem manaSystem;
 
     Vector2 vertical;
 
-    enum State { Idle, Run, Jump, Glide, Dash, WallSlide, WallJump, Atk, Shoot, TakeDamage }
+    enum State { Idle, Run, Jump, Glide, Dash, WallSlide, WallJump, Atk, Shoot, TakeDamage, DoNothing }
 
     State state = State.Idle;
 
@@ -111,16 +112,19 @@ public class MoveFSM : MonoBehaviour
         trans = GetComponent<Transform>();
         sprite = GetComponent<SpriteRenderer>();
         normalColor = sprite.color;
+        normalColorLives = Life1.GetComponent<Image>().color;
     }
 
     private void Update()
     {
+        Debug.Log(canWallJump);
+
         jumpInput = Input.GetKey(KeyCode.Space);
         horizontalInput = Input.GetAxisRaw("Horizontal");
         dashInput = Input.GetKey(KeyCode.LeftShift);
         shootInput = Input.GetKeyDown(KeyCode.L);
         atkInput = Input.GetKey(KeyCode.K);
-        leafInput = Input.GetKey(KeyCode.Q);
+        leafInput = Input.GetKeyDown(KeyCode.Q);
 
         if (isFacingRight)
         {
@@ -133,7 +137,7 @@ public class MoveFSM : MonoBehaviour
 
         if (canMove)
         {
-            speed = 8; 
+            speed = 8;
         }
         else
         {
@@ -145,16 +149,21 @@ public class MoveFSM : MonoBehaviour
         {
             canJump = true;
         }
-    }
 
-    void FixedUpdate()
-    {
         //Seria interessante crira mais um estado para o curar
         if (leafInput && leafs > 0 && playerHealth < 3)
         {
             Heal();
         }
 
+        if (doNothing)
+        {
+            state = State.DoNothing;
+        }
+    }
+
+    void FixedUpdate()
+    {
         if (isDashing)
         {
             return;
@@ -172,6 +181,7 @@ public class MoveFSM : MonoBehaviour
             case State.Shoot: Shoot(); break;
             case State.Atk: Atk(); break;
             case State.TakeDamage: TakeDamage(); break;
+            case State.DoNothing: DoNothing(); break;
         }
 
         moveDirection = new Vector2(horizontalInput, 0).normalized;
@@ -186,7 +196,7 @@ public class MoveFSM : MonoBehaviour
         {
             state = State.Dash;
         }
-        else if (rb.velocity.y < -0.1)
+        else if (!IsGrounded())
         {
             state = State.Glide;
         }
@@ -228,7 +238,7 @@ public class MoveFSM : MonoBehaviour
         {
             state = State.WallSlide;
         }
-        else if (rb.velocity.y < -0.1)
+        else if (!IsGrounded())
         {
             state = State.Glide;
         }
@@ -299,7 +309,7 @@ public class MoveFSM : MonoBehaviour
 
         rb.velocity = rb.velocity.y * Vector2.up + speed * horizontalInput * Vector2.right;
 
-        if (rb.velocity.y < -0.1)
+        if (rb.velocity.y < -0.1f)
         {
             animator.Play("Fall");
         }
@@ -363,10 +373,6 @@ public class MoveFSM : MonoBehaviour
         {
             state = State.Glide;
         }
-        else if (IsWalled() && !IsGrounded())
-        {
-            state = State.WallSlide;
-        }
     }
 
     public IEnumerator DashTempo()
@@ -395,9 +401,13 @@ public class MoveFSM : MonoBehaviour
         {
             state = State.Glide;
         }
-        else if (jumpInput && canWallJump)
+        else if (jumpInput && canWallJump && !isWallJumping)
         {
             state = State.WallJump;
+        }
+        else if (!IsGrounded() && !IsWalled())
+        {
+            state = State.Glide;
         }
     }
 
@@ -428,6 +438,10 @@ public class MoveFSM : MonoBehaviour
         {
             state = State.Dash;
         }
+        else if (IsWalled() && !IsGrounded())
+        {
+            state = State.WallSlide;
+        }
         else if (!IsGrounded())
         {
             state = State.Glide;
@@ -445,12 +459,12 @@ public class MoveFSM : MonoBehaviour
         isWallJumping = false;
     }
 
-    private bool IsGrounded()
+    public bool IsGrounded()
     {
         return Physics2D.OverlapBox(groundCheck.position, new Vector2(0.1f, 0.1f) ,0.01f, groundLayer);
     }
 
-    private bool IsWalled()
+    public bool IsWalled()
     {
         return Physics2D.OverlapCircle(wallCheck.position, 0.2f, wallLayer);
     }
@@ -463,25 +477,26 @@ public class MoveFSM : MonoBehaviour
 
         StartCoroutine(ShootDelay());
 
-        if (IsGrounded())
+        if (jumpInput && canJump)
         {
-            if (jumpInput && canJump)
-            {
-                state = State.Jump;
-            }
-            else if (horizontalInput != 0f)
-            {
-                state = State.Run;
-            }
-            else if (horizontalInput == 0f)
-            {
-                state = State.Idle;
-            }
-            if (shootInput &&  manaSystem.currentMana > shootCost && canShoot)
-            {
-                state = State.Shoot;
-            }
+            state = State.Jump;
         }
+        else if (horizontalInput != 0f)
+        {
+            state = State.Run;
+        }
+        else if (horizontalInput == 0f)
+        {
+            state = State.Idle;
+        }
+       else if (shootInput && manaSystem.currentMana > shootCost && canShoot)
+       {
+            state = State.Shoot;
+       }
+       else if (!IsGrounded())
+       {
+            state = State.Glide;
+       }
     }
 
     public IEnumerator ShootDelay()
@@ -496,8 +511,7 @@ public class MoveFSM : MonoBehaviour
     }
 
     private void Atk()
-    {
-        
+    {  
         if (Time.time >= nextAtkTime)
         {
             animator.Play("Atk");
@@ -514,30 +528,25 @@ public class MoveFSM : MonoBehaviour
             nextAtkTime = Time.time + 1f / atkRate;
         }
 
-        if (IsGrounded())
+        if (jumpInput)
         {
-            if (jumpInput)
-            {
-                state = State.Jump;
-            }
-            else if (horizontalInput != 0f)
-            {
-                state = State.Run;
-            }
-            else if (horizontalInput == 0f)
-            {
-                state = State.Idle;
-            }
-            else if (atkInput)
-            {
-                state = State.Atk;
-            }
-            if (Input.GetKeyDown(KeyCode.E) && manaSystem.CanAffordAbility(shootCost))
-            {
-                manaSystem.UseAbility(shootCost);
-                state = State.Shoot;
-            }
-
+            state = State.Jump;
+        }
+        else if (horizontalInput != 0f)
+        {
+            state = State.Run;
+        }
+        else if (horizontalInput == 0f)
+        {
+            state = State.Idle;
+        }
+        else if (atkInput)
+        {
+            state = State.Atk;
+        }
+        else if (!IsGrounded())
+        {
+            state = State.Glide;
         }
     }
 
@@ -563,10 +572,13 @@ public class MoveFSM : MonoBehaviour
             if (playerHealth == 2)
             {
                 Life1.SetActive(false);
+                Life2.GetComponent<Image>().color = Color.yellow;
+                Life3.GetComponent<Image>().color = Color.yellow;
             }
             else if (playerHealth == 1)
             {
                 Life2.SetActive(false);
+                Life3.GetComponent<Image>().color = Color.red;
             }
             else if (playerHealth == 0)
             {
@@ -646,11 +658,6 @@ public class MoveFSM : MonoBehaviour
         Destroy(gameObject);
     }
 
-    /*private bool CanInteract()
-    {
-        return Physics2D.OverlapCircle(InteractableCheck.position, 2f, interactableLayer);
-    }*/
-
     public void AddLeaf()
     {
         leafs++;
@@ -677,17 +684,6 @@ public class MoveFSM : MonoBehaviour
     void Heal()
     {
 
-        if (playerHealth == 2)
-        {
-            Life1.SetActive(true);
-        }
-        else if (leafs == 1)
-        {
-            Life2.SetActive(true);
-        }
-
-        playerHealth++;
-
         if (leafs == 3)
         {
             Leaf3.SetActive(false);
@@ -701,8 +697,39 @@ public class MoveFSM : MonoBehaviour
             Leaf1.SetActive(false);
         }
 
-        leafs--; 
+        leafs--;
 
+        playerHealth++;
+
+        if (playerHealth == 3)
+        {
+            Life1.SetActive(true);
+            Life2.GetComponent<Image>().color = normalColorLives;
+            Life3.GetComponent<Image>().color = normalColorLives;
+        }
+        else if (playerHealth == 2)
+        {
+            Life2.SetActive(true);
+            Life2.GetComponent<Image>().color = Color.yellow;
+            Life3.GetComponent<Image>().color = Color.yellow;
+        }
+    }
+
+    void DoNothing()
+    {
+        rb.velocity = Vector2.zero;
+        animator.Play("Do Nothing");
+
+        if (!doNothing)
+        {
+            StartCoroutine(DoSomething());
+        }
+    }
+
+    IEnumerator DoSomething()
+    {
+        yield return new WaitForSeconds(0.13f);
+        state = State.Idle;
     }
 }
 
