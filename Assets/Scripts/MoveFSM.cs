@@ -134,6 +134,15 @@ public class MoveFSM : MonoBehaviour
             speed = 0;
         }
 
+        if (isFacingRight)
+        {
+            facing = -1;
+        }
+        else
+        {
+            facing = 1;
+        }
+
         //Fazer com que segurar o JumoInput não faça o player pular infinitamente
         if (Input.GetKeyUp(KeyCode.Space))
         {
@@ -302,7 +311,7 @@ public class MoveFSM : MonoBehaviour
 
         rb.velocity = rb.velocity.y * Vector2.up + speed * horizontalInput * Vector2.right;
 
-        if (rb.velocity.y < -0.1f)
+        if (rb.velocity.y < -0.2f)
         {
             animator.Play("Fall");
         }
@@ -336,15 +345,6 @@ public class MoveFSM : MonoBehaviour
         {
             isFacingRight = !isFacingRight;
             transform.Rotate(0, 180, 0);
-
-            if (isFacingRight)
-            {
-                facing = -1;
-            }
-            else 
-            {
-                facing = 1;
-            }
         }
     }
 
@@ -483,7 +483,7 @@ public class MoveFSM : MonoBehaviour
 
     public bool IsWalled()
     {
-        return Physics2D.OverlapCircle(wallCheck.position, 0.2f, wallLayer);
+        return Physics2D.OverlapCircle(wallCheck.position, 0.1f, wallLayer);
     }
 
     void Shoot()
@@ -531,40 +531,43 @@ public class MoveFSM : MonoBehaviour
     {  
         if (Time.time >= nextAtkTime)
         {
-            animator.Play("Atk");
-            isAtking = true;
 
-            Collider2D[] hitEnemies = Physics2D.OverlapCircleAll(atkPoint.position, atkRange, enemyLayer);
-
-            foreach (Collider2D enemy in hitEnemies)
-            {
-                enemy.GetComponent<EnemyFSM>().TakeDamage(20);
-            }
-            isAtking = false;
+            StartCoroutine(ATK());
 
             nextAtkTime = Time.time + 1f / atkRate;
         }
 
-        if (jumpInput)
-        {
-            state = State.Jump;
-        }
-        else if (horizontalInput != 0f)
-        {
-            state = State.Run;
-        }
-        else if (horizontalInput == 0f)
+        else if (horizontalInput == 0f && isAtking == false)
         {
             state = State.Idle;
+        }
+        else if (horizontalInput != 0f && isAtking == false)
+        {
+            state = State.Run;
         }
         else if (atkInput)
         {
             state = State.Atk;
         }
-        else if (!IsGrounded())
+    }
+
+    IEnumerator ATK()
+    {
+        isAtking = true;
+
+        animator.Play("Atk");
+
+        Collider2D[] hitEnemies = Physics2D.OverlapCircleAll(atkPoint.position, atkRange, enemyLayer);
+
+        foreach (Collider2D enemy in hitEnemies)
         {
-            state = State.Glide;
+            enemy.GetComponent<EnemyFSM>().TakeDamage(20);
         }
+
+        yield return new WaitForSeconds(0.3f);
+
+        isAtking = false;
+
     }
 
     void OnDrawGizmosSelected()
