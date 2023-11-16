@@ -43,6 +43,7 @@ GameObject:
   - component: {fileID: 4823095512899825988}
   - component: {fileID: 1860559806804602896}
   - component: {fileID: 1358003845896393235}
+  - component: {fileID: 255122043899419937}
   - component: {fileID: 1614344442369634386}
   m_Layer: 8
   m_Name: Fire Enemy (Teste)
@@ -66,7 +67,7 @@ Transform:
   - {fileID: 2421274803787721255}
   - {fileID: 5143102110293830912}
   m_Father: {fileID: 0}
-  m_RootOrder: 11
+  m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!212 &4823095512899825988
 SpriteRenderer:
@@ -176,6 +177,33 @@ CapsuleCollider2D:
   m_Offset: {x: -0.41431358, y: 0.034526758}
   m_Size: {x: 4.854947, y: 7.5480003}
   m_Direction: 0
+--- !u!50 &255122043899419937
+Rigidbody2D:
+  serializedVersion: 4
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6421745642674598842}
+  m_BodyType: 0
+  m_Simulated: 1
+  m_UseFullKinematicContacts: 0
+  m_UseAutoMass: 0
+  m_Mass: 1
+  m_LinearDrag: 0
+  m_AngularDrag: 0.05
+  m_GravityScale: 0
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_Interpolate: 0
+  m_SleepingMode: 1
+  m_CollisionDetection: 0
+  m_Constraints: 4
 --- !u!114 &1614344442369634386
 MonoBehaviour:
   m_ObjectHideFlags: 0
