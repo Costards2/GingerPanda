@@ -13,7 +13,8 @@ public class EnemyFSM : MonoBehaviour
     bool isKb;
     private readonly float kbForceX = 6f;
     private readonly float kbForceY = 0f;
-    private Rigidbody2D rb; 
+    private Rigidbody2D rb;
+    float facing;
 
     public float walkSpeed = 5f;
     private float currentWalkSpeed; 
@@ -119,32 +120,34 @@ public class EnemyFSM : MonoBehaviour
     {
         beforeState = currentState; 
         currentHealth -= damage;
-        StartCoroutine(DamageWait());
         StartCoroutine(Damage());
 
         //Hurt anim 
-
-        isKb = true;
 
         if (currentHealth < 0)
         {
             Die();
         }
+
+        facing = FindObjectOfType<MoveFSM>().facing;
+
+        isKb = true;
+
         if (isKb)
         {
-            if (currentState == EnemyState.WalkingRight)
+            if (facing == 1)
             {
                 rb.velocity = new Vector2(-kbForceX, kbForceY);
                 isKb = false;
             }
-            else if (currentState == EnemyState.WalkingLeft)
+            else if (facing == -1)
             {
                 rb.velocity = new Vector2(kbForceX, kbForceY);
                 isKb = false;
             }
         }
-
         Invoke(nameof(StopKB), 0.15f);
+        StartCoroutine(DamageWait());
     }
 
     void StopKB()
