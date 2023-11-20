@@ -201,7 +201,7 @@ public class MoveFSM : MonoBehaviour
             {
                 state = State.Jump;
             }
-            else if (horizontalInput != 0f)
+            else if (horizontalInput != 0f && rb.velocity.y == 0)
             {
                 state = State.Run;
             }
@@ -247,7 +247,7 @@ public class MoveFSM : MonoBehaviour
             {
                 state = State.Jump;
             }
-            else if (horizontalInput == 0f)
+            else if (horizontalInput == 0f && rb.velocity.y == 0 && rb.velocity.x == 0)
             {
                 state = State.Idle;
             }
@@ -280,7 +280,7 @@ public class MoveFSM : MonoBehaviour
 
         rb.velocity = rb.velocity.y * Vector2.up + speed * horizontalInput * Vector2.right;
 
-        if (horizontalInput != 0f && IsGrounded())
+        if (horizontalInput != 0f && IsGrounded() && rb.velocity.y == 0)
         {
             state = State.Run;
         }
@@ -323,15 +323,20 @@ public class MoveFSM : MonoBehaviour
         else if (IsWalled() && !IsGrounded())
         {
             state = State.WallSlide;
+
+        }
+        else if (atkInput)
+        {
+            state = State.Atk;
         }
 
         if (IsGrounded())
         {
-            if (horizontalInput != 0f)
+            if (horizontalInput != 0f && rb.velocity.y == 0)
             {
                 state = State.Run;
             }
-            else if (horizontalInput == 0f)
+            else if (horizontalInput == 0f && rb.velocity.y == 0 && rb.velocity.x == 0)
             {
                 state = State.Idle;
             }
@@ -362,7 +367,7 @@ public class MoveFSM : MonoBehaviour
             {
                 state = State.Jump;
             }
-            else if (horizontalInput != 0f)
+            else if (horizontalInput != 0f && rb.velocity.y == 0)
             {
                 state = State.Run;
             }
@@ -498,11 +503,11 @@ public class MoveFSM : MonoBehaviour
         {
             state = State.Jump;
         }
-        else if (horizontalInput != 0f)
+        else if (horizontalInput != 0f && rb.velocity.y == 0)
         {
             state = State.Run;
         }
-        else if (horizontalInput == 0f)
+        else if (horizontalInput == 0f && rb.velocity.y == 0 && rb.velocity.x == 0)
         {
             state = State.Idle;
         }
@@ -537,17 +542,21 @@ public class MoveFSM : MonoBehaviour
             nextAtkTime = Time.time + 1f / atkRate;
         }
 
-        else if (horizontalInput == 0f && isAtking == false)
+        else if (horizontalInput == 0f && isAtking == false && rb.velocity.y == 0 && rb.velocity.x == 0)
         {
             state = State.Idle;
         }
-        else if (horizontalInput != 0f && isAtking == false)
+        else if (horizontalInput != 0f && isAtking == false && rb.velocity.y == 0)
         {
             state = State.Run;
         }
         else if (atkInput)
         {
             state = State.Atk;
+        }
+        else if (!IsGrounded() && !isAtking)
+        {
+            state = State.Glide;
         }
     }
 
@@ -560,8 +569,15 @@ public class MoveFSM : MonoBehaviour
         Collider2D[] hitEnemies = Physics2D.OverlapCircleAll(atkPoint.position, atkRange, enemyLayer);
 
         foreach (Collider2D enemy in hitEnemies)
-        {
-            enemy.GetComponent<EnemyFSM>().TakeDamage(20);
+        {   
+            if(enemy.CompareTag("Enemy"))
+            {
+                enemy.GetComponent<EnemyFSM>().TakeDamage(20);
+            }
+            else if (enemy.CompareTag("Boss"))
+            {
+                enemy.GetComponent<Boss>().TakeDamage(20);
+            }
         }
 
         yield return new WaitForSeconds(0.3f);
@@ -586,7 +602,6 @@ public class MoveFSM : MonoBehaviour
     {
         if (collision.gameObject.CompareTag("Enemy"))
         {
-
             playerHealth--;
 
             if (playerHealth == 2)
@@ -604,6 +619,7 @@ public class MoveFSM : MonoBehaviour
             {
                 Life3.SetActive(false);
             }
+
             state = State.TakeDamage;   
         }
     }
@@ -616,8 +632,10 @@ public class MoveFSM : MonoBehaviour
         }
     }
 
-    void TakeDamage()
+    public void TakeDamage()
     {
+       // playerHealth--;
+
         StartCoroutine(Damage());
 
         isKb = true;
@@ -649,7 +667,7 @@ public class MoveFSM : MonoBehaviour
     {
         animator.Play("TakeDamage");
 
-        for( int i = 0; i < 2; i++ ) 
+        for ( int i = 0; i < 2; i++ ) 
         {
             sprite.color = new Color(0.86f, 0.4f, 0.4f, 0.90f);
 
@@ -659,7 +677,7 @@ public class MoveFSM : MonoBehaviour
 
             sprite.color = normalColor;
             
-            //sprite.enabled = false; 
+            //sprite.enabled = false;
 
             yield return new WaitForSeconds(0.15f);
 
