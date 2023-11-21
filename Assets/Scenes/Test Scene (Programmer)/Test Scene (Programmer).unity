@@ -2213,8 +2213,7 @@ MonoBehaviour:
   bulletPrefab: {fileID: 5297915365955832442, guid: c21bfdbae68e26843ad6f5e36ccd86ec, type: 3}
   shootingPoint: {fileID: 1445880348}
   shootInput: 0
-  canShoot: 0
-  shootCooldown: 0
+  ShootingRate: 1
   enemyLayer:
     serializedVersion: 2
     m_Bits: 256
@@ -3125,8 +3124,7 @@ MonoBehaviour:
   bulletPrefab: {fileID: 5297915365955832442, guid: c21bfdbae68e26843ad6f5e36ccd86ec, type: 3}
   shootingPoint: {fileID: 257803006}
   shootInput: 0
-  canShoot: 1
-  shootCooldown: 0
+  ShootingRate: 1
   enemyLayer:
     serializedVersion: 2
     m_Bits: 256
