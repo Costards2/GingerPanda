@@ -2974,21 +2974,21 @@ TrailRenderer:
       m_Curve:
       - serializedVersion: 3
         time: 0
-        value: 0.5
-        inSlope: 0
-        outSlope: 0
+        value: 1
+        inSlope: -1.0646914
+        outSlope: -1.0646914
         tangentMode: 0
         weightedMode: 0
         inWeight: 0.33333334
-        outWeight: 0.33333334
+        outWeight: 0.3499582
       - serializedVersion: 3
         time: 0.9902534
         value: 0
-        inSlope: 0
-        outSlope: 0
+        inSlope: -1.0520217
+        outSlope: -1.0520217
         tangentMode: 0
         weightedMode: 0
-        inWeight: 0
+        inWeight: 0.3078317
         outWeight: 0
       m_PreInfinity: 2
       m_PostInfinity: 2
@@ -4554,6 +4554,10 @@ PrefabInstance:
     - target: {fileID: 6421745642674598842, guid: 5de0684db4e98304f9491f4d44efd8be, type: 3}
       propertyPath: m_Name
       value: Fire Enemy (Teste) (1)
+      objectReference: {fileID: 0}
+    - target: {fileID: 6421745642674598842, guid: 5de0684db4e98304f9491f4d44efd8be, type: 3}
+      propertyPath: m_IsActive
+      value: 0
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []

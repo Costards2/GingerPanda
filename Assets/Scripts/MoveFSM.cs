@@ -41,18 +41,18 @@ public class MoveFSM : MonoBehaviour
     public float dashingPower = 14f;
     public float dashingTime = 0.2f;
     public float dashingCooldown = 1f;
+    bool finishedShooting;
 
     [Header("Shoot")]
     public float shootCost = 20f; 
     public GameObject bulletPrefab;
     public Transform shootingPoint;
-    readonly float shootingTime = 0.75f;
-    readonly float shootingCooldown = 0.5f;
+    readonly float shootingTime = 0.25f;
     public bool shootInput;
-    public bool canShoot = true;
-    public bool shootCooldown;
+    public float ShootingRate = 0.5f;
+    float nextShot = 0f;
 
-   [Header("Melee ATK")]
+    [Header("Melee ATK")]
     bool atkInput;
     private readonly float atkRange = 0.5f;
     public LayerMask enemyLayer;
@@ -121,7 +121,7 @@ public class MoveFSM : MonoBehaviour
         jumpInput = Input.GetKey(KeyCode.Space);
         horizontalInput = Input.GetAxisRaw("Horizontal");
         dashInput = Input.GetKey(KeyCode.LeftShift);
-        shootInput = Input.GetKeyDown(KeyCode.L);
+        shootInput = Input.GetKey(KeyCode.L);
         atkInput = Input.GetKey(KeyCode.K);
         leafInput = Input.GetKeyDown(KeyCode.Q);
 
@@ -213,7 +213,7 @@ public class MoveFSM : MonoBehaviour
             {
                 state = State.DoNothing;
             }
-            if (shootInput && manaSystem.currentMana > shootCost && canShoot && !shootCooldown)
+            if (shootInput && manaSystem.currentMana > shootCost)
             {
                 state = State.Shoot;
             }
@@ -260,7 +260,7 @@ public class MoveFSM : MonoBehaviour
             {
                 state = State.DoNothing;
             }
-            if (shootInput && manaSystem.currentMana > shootCost && canShoot && !shootCooldown)
+            if (shootInput && manaSystem.currentMana > shootCost)
             {
                 rb.velocity = Vector2.zero;
                 state = State.Shoot;
@@ -412,7 +412,7 @@ public class MoveFSM : MonoBehaviour
         {
             state = State.Glide;
         }
-        else if (jumpInput && canWallJump)
+        else if (jumpInput && canWallJump && canJump)
         {
             state = State.WallJump;
         }
@@ -491,45 +491,105 @@ public class MoveFSM : MonoBehaviour
         return Physics2D.OverlapCircle(wallCheck.position, 0.1f, wallLayer);
     }
 
-    void Shoot()
+    //void Shoot()
+    //{
+    //    animator.Play("Shoot");
+
+    //    finishedShooting = false;
+
+    //    manaSystem.UseAbility(shootCost);
+
+    //    StartCoroutine(ShootDelay());
+
+    //    Debug.Log(finishedShooting);
+
+    //    if (jumpInput && canJump && finishedShooting)
+    //    {
+    //        state = State.Jump;
+    //    }
+    //    else if (horizontalInput != 0f && rb.velocity.y == 0 && finishedShooting)
+    //    {
+    //        state = State.Run;
+    //    }
+    //    else if (horizontalInput == 0f && rb.velocity.y == 0 && rb.velocity.x == 0 && finishedShooting)
+    //    {
+    //        state = State.Idle;
+    //    }
+    //    else if (!IsGrounded())
+    //    {
+    //        state = State.Glide;
+    //    }
+    //}
+
+    //public IEnumerator ShootDelay()
+    //{
+    //    //Debug.Log("ShootDelay: Start of coroutine");
+
+    //    shootCooldown = true;
+    //    canMove = false;
+
+    //    //Debug.Log("ShootDelay: Before Instantiate");
+
+    //    shootingPoint.rotation = gameObject.transform.rotation;
+    //    Instantiate(bulletPrefab, shootingPoint.position, shootingPoint.rotation);
+
+    //    //Debug.Log("ShootDelay: After Instantiate");
+
+    //    yield return new WaitForSeconds(shootingTime);
+
+    //    //Debug.Log("ShootDelay: After WaitForSeconds");
+
+    //    finishedShooting = true;
+
+    //    //Debug.Log("ShootDelay: After finishedShooting = true");
+
+    //    canMove = true;
+    //    shootCooldown = false;
+
+    //    //Debug.Log("ShootDelay: End of coroutine");
+    //}
+
+    private void Shoot()
     {
-        animator.Play("Shoot");
-
-        manaSystem.UseAbility(shootCost);
-
-        StartCoroutine(ShootDelay());
-
-        if (jumpInput && canJump)
+        if (Time.time >= nextShot)
         {
-            state = State.Jump;
+            finishedShooting = false;
+
+            manaSystem.UseAbility(shootCost);
+
+            StartCoroutine(ShootDelay());
+
+            nextShot = Time.time + 1f / ShootingRate;
         }
-        else if (horizontalInput != 0f && rb.velocity.y == 0)
-        {
-            state = State.Run;
-        }
-        else if (horizontalInput == 0f && rb.velocity.y == 0 && rb.velocity.x == 0)
+
+        else if (horizontalInput == 0f && rb.velocity.y == 0 && rb.velocity.x == 0 && finishedShooting)
         {
             state = State.Idle;
         }
-       else if (shootInput && manaSystem.currentMana > shootCost && canShoot)
-       {
-            state = State.Shoot;
-       }
-       else if (!IsGrounded())
-       {
+        else if (horizontalInput != 0f && rb.velocity.y == 0 && finishedShooting)
+        {
+            state = State.Run;
+        }
+        else if (atkInput && finishedShooting)
+        {
+            state = State.Atk;
+        }
+        else if (!IsGrounded())
+        {
             state = State.Glide;
-       }
+        }
     }
 
-    public IEnumerator ShootDelay()
+    IEnumerator ShootDelay()
     {
-        shootCooldown = true;
-        canMove = false;
+        animator.Play("Shoot");
+
         shootingPoint.rotation = gameObject.transform.rotation;
         Instantiate(bulletPrefab, shootingPoint.position, shootingPoint.rotation);
+
         yield return new WaitForSeconds(shootingTime);
-        shootCooldown = false;
-        canMove = true;
+
+        finishedShooting = true;     
     }
 
     private void Atk()
