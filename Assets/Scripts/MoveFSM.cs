@@ -20,15 +20,14 @@ public class MoveFSM : MonoBehaviour
   
     [Header("Everything related to Wall")]
     private readonly bool isWallSliding;
-    private readonly float wallSlidingSpeed = 2f;
+    private readonly float wallSlidingSpeed = 1f;
     private bool isWallJumping;
     private float wallJumpingDirection;
-    //WallJumpPowerX era 9,5f
-    private Vector2 wallJumpingPower = new (50f, 14f);
+    private Vector2 wallJumpingPower = new (16f, 14f);
     public float facing = 0;
     bool canWallJump = true;
     public float wallJumpTime = 0.3f;
-    public float wallJumpCooldown = 1f;
+    public float wallJumpCooldown = 0.5f;
     private float wallJumpingCounter;
     private readonly float wallJumpingDuration = 0.2f;
     private readonly float wallJumpingTime = 0.2f;
@@ -158,6 +157,8 @@ public class MoveFSM : MonoBehaviour
 
     void FixedUpdate()
     {
+        moveDirection = new Vector2(horizontalInput, 0).normalized;
+
         if (isDashing)
         {
             return;
@@ -177,9 +178,6 @@ public class MoveFSM : MonoBehaviour
             case State.TakeDamage: TakeDamage(); break;
             case State.DoNothing: DoNothing(); break;
         }
-
-        moveDirection = new Vector2(horizontalInput, 0).normalized;
-
     }
 
     void IdleState()
@@ -260,7 +258,7 @@ public class MoveFSM : MonoBehaviour
             {
                 state = State.DoNothing;
             }
-            if (shootInput && manaSystem.currentMana > shootCost)
+            if (shootInput && manaSystem.currentMana > shootCost && Time.time >= nextShot) // O "Time.time >= nextShot" está aqui se não o player muda de estado para ver se pode atirar
             {
                 rb.velocity = Vector2.zero;
                 state = State.Shoot;
@@ -307,9 +305,12 @@ public class MoveFSM : MonoBehaviour
 
     void GlideState()
     {
-        Flip();
 
-        rb.velocity = rb.velocity.y * Vector2.up + speed * horizontalInput * Vector2.right;
+        if (!isWallJumping) // If necessatio para com que o player consiga completar o WallJump se não ele já entra em queda 
+        {
+            rb.velocity = rb.velocity.y * Vector2.up + speed * horizontalInput * Vector2.right;
+            Flip();
+        }
 
         if (rb.velocity.y < -0.2f)
         {
@@ -405,7 +406,7 @@ public class MoveFSM : MonoBehaviour
     void WallSlide()
     {
         animator.Play("WallSlide");
-   
+
         rb.velocity = new Vector2(rb.velocity.x, Mathf.Clamp(rb.velocity.y, -wallSlidingSpeed, float.MaxValue));
 
         if (horizontalInput == facing)
@@ -439,8 +440,6 @@ public class MoveFSM : MonoBehaviour
         }
 
         rb.velocity = new Vector2(wallJumpingDirection * wallJumpingPower.x, wallJumpingPower.y);
-
-        Debug.Log(rb.velocity);
 
         wallJumpingCounter = 0f;
 
@@ -602,11 +601,11 @@ public class MoveFSM : MonoBehaviour
             nextAtkTime = Time.time + 1f / atkRate;
         }
 
-        else if (horizontalInput == 0f && isAtking == false && rb.velocity.y == 0 && rb.velocity.x == 0)
+        else if (horizontalInput == 0f && !isAtking && rb.velocity.y == 0 && rb.velocity.x == 0)
         {
             state = State.Idle;
         }
-        else if (horizontalInput != 0f && isAtking == false && rb.velocity.y == 0)
+        else if (horizontalInput != 0f && !isAtking && rb.velocity.y == 0)
         {
             state = State.Run;
         }
@@ -634,6 +633,10 @@ public class MoveFSM : MonoBehaviour
             {
                 enemy.GetComponent<EnemyFSM>().TakeDamage(20);
             }
+            else if (enemy.CompareTag("EnemyGolem"))
+            {
+                enemy.GetComponent<EnemyController>().TakeDamage(20);
+            }
             else if (enemy.CompareTag("Boss"))
             {
                 enemy.GetComponent<Boss>().TakeDamage(20);
@@ -660,28 +663,36 @@ public class MoveFSM : MonoBehaviour
 
     private void OnCollisionEnter2D(Collision2D collision)
     {
-        if (collision.gameObject.CompareTag("Enemy"))
+        if (collision.gameObject.CompareTag("Enemy") || collision.gameObject.CompareTag("EnemyGolem"))
         {
-            playerHealth--;
+            ReceiveDamage(1); 
 
-            if (playerHealth == 2)
-            {
-                Life1.SetActive(false);
-                Life2.GetComponent<Image>().color = Color.yellow;
-                Life3.GetComponent<Image>().color = Color.yellow;
-            }
-            else if (playerHealth == 1)
-            {
-                Life2.SetActive(false);
-                Life3.GetComponent<Image>().color = Color.red;
-            }
-            else if (playerHealth == 0)
-            {
-                Life3.SetActive(false);
-            }
+            //playerHealth--;
 
-            state = State.TakeDamage;   
+            //if (playerHealth == 2)
+            //{
+            //    Life1.SetActive(false);
+            //    Life2.GetComponent<Image>().color = Color.yellow;
+            //    Life3.GetComponent<Image>().color = Color.yellow;
+            //}
+            //else if (playerHealth == 1)
+            //{
+            //    Life2.SetActive(false);
+            //    Life3.GetComponent<Image>().color = Color.red;
+            //}
+            //else if (playerHealth == 0)
+            //{
+            //    Life3.SetActive(false);
+            //}
+
+            //state = State.TakeDamage;   
         }
+    }
+
+    public void ReceiveDamage(int damage)
+    {
+        playerHealth = playerHealth - damage;
+        state = State.TakeDamage;
     }
 
     private void OnCollisionExit2D(Collision2D collision)
@@ -694,9 +705,23 @@ public class MoveFSM : MonoBehaviour
 
     public void TakeDamage()
     {
-       // playerHealth--;
-
         StartCoroutine(Damage());
+
+        if (playerHealth == 2)
+        {
+            Life1.SetActive(false);
+            Life2.GetComponent<Image>().color = Color.yellow;
+            Life3.GetComponent<Image>().color = Color.yellow;
+        }
+        else if (playerHealth == 1)
+        {
+            Life2.SetActive(false);
+            Life3.GetComponent<Image>().color = Color.red;
+        }
+        else if (playerHealth == 0)
+        {
+            Life3.SetActive(false);
+        }
 
         isKb = true;
         

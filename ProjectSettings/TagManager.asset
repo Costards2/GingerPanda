@@ -9,6 +9,7 @@ TagManager:
   - Projectile
   - GoThroughPlatform
   - Boss
+  - EnemyGolem
   layers:
   - Default
   - TransparentFX

@@ -89,33 +89,6 @@ public class EnemyFSM : MonoBehaviour
         walkSpeed = currentWalkSpeed; 
     }
 
-    IEnumerator DamageWait()
-    {
-        walkSpeed = 0;
-        yield return new WaitForSeconds(0.3f);
-        walkSpeed = currentWalkSpeed;
-    }
-
-    public IEnumerator Damage()
-    {
-        for (int i = 0; i < 1; i++)
-        {
-            sprite.color = new Color(0.68f, 0.17f, 0.17f, 0.90f);
-
-            //sprite.enabled = true;
-
-            yield return new WaitForSeconds(0.15f);
-
-            sprite.color = normalColor;
-
-            //sprite.enabled = false; 
-
-            yield return new WaitForSeconds(0.15f);
-
-            //sprite.enabled = true;
-        }
-    }
-
     public void TakeDamage(int damage)
     {
         beforeState = currentState; 
@@ -148,6 +121,33 @@ public class EnemyFSM : MonoBehaviour
         }
         Invoke(nameof(StopKB), 0.15f);
         StartCoroutine(DamageWait());
+    }
+
+    IEnumerator DamageWait()
+    {
+        walkSpeed = 0;
+        yield return new WaitForSeconds(0.3f);
+        walkSpeed = currentWalkSpeed;
+    }
+
+    public IEnumerator Damage()
+    {
+        for (int i = 0; i < 1; i++)
+        {
+            sprite.color = new Color(0.68f, 0.17f, 0.17f, 0.90f);
+
+            //sprite.enabled = true;
+
+            yield return new WaitForSeconds(0.15f);
+
+            sprite.color = normalColor;
+
+            //sprite.enabled = false; 
+
+            yield return new WaitForSeconds(0.15f);
+
+            //sprite.enabled = true;
+        }
     }
 
     void StopKB()
