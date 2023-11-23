@@ -9,7 +9,6 @@ using UnityEngine.UIElements.Experimental;
 public class EnemyController : MonoBehaviour
 {
     public float moveSpeed = 5f;
-    
     public float playerDetectionRadius = 10f;
     public float laserAttackRange = 5f;
     public float laserDamage = 10f;
@@ -18,7 +17,6 @@ public class EnemyController : MonoBehaviour
     bool isKb;
     private readonly float kbForceX = 6f;
     private readonly float kbForceY = 0f;
-    private Rigidbody2D rb;
     float facing;
     private SpriteRenderer sprite;
     private Color normalColor;
@@ -26,9 +24,17 @@ public class EnemyController : MonoBehaviour
     private bool isFacingLeft = true;
     [SerializeField] private Animator animator;
 
+    public GameObject projectilePrefab;
+    public Transform projectileSpawnPoint;
+    public float projectileSpeed = 5f;
+    public float timeBetweenShots = 2f;
+    private bool canShoot = true;
+
     private float currentHealth;
     private Transform player;
     private CircleCollider2D detectionCollider;
+    public Rigidbody2D rb;
+    private bool shouldFlip = true;
 
     private enum EnemyState
     {
@@ -57,6 +63,9 @@ public class EnemyController : MonoBehaviour
         {
             player = playerObject.transform;
         }
+
+        // Ensure you have assigned the projectileSpawnPoint in the Unity Editor
+        // projectileSpawnPoint = transform.Find("ProjectileSpawnPoint");
     }
 
     private void Update()
@@ -116,11 +125,17 @@ public class EnemyController : MonoBehaviour
 
             if (distanceToPlayer < playerDetectionRadius)
             {
-                if (distanceToPlayer > 0.1f)
+                if (distanceToPlayer > 1f)
                 {
                     Vector2 direction = new Vector2(player.position.x - transform.position.x, 0f).normalized;
                     rb.velocity = direction * moveSpeed;
                     animator.Play("Chase");
+
+                    if (canShoot)
+                    {
+                        ShootProjectile();
+                        StartCoroutine(ResetShootCooldown());
+                    }
                 }
                 else
                 {
@@ -158,6 +173,20 @@ public class EnemyController : MonoBehaviour
         }
     }
 
+    private void ShootProjectile()
+    {
+        GameObject projectile = Instantiate(projectilePrefab, projectileSpawnPoint.position, Quaternion.identity);
+        Rigidbody2D projectileRb = projectile.GetComponent<Rigidbody2D>();
+        projectileRb.velocity = new Vector2(facing * projectileSpeed, 0f);
+    }
+
+    IEnumerator ResetShootCooldown()
+    {
+        canShoot = false;
+        yield return new WaitForSeconds(timeBetweenShots);
+        canShoot = true;
+    }
+
     public void TakeDamage(float damage)
     {
         beforeState = currentState;
@@ -173,17 +202,21 @@ public class EnemyController : MonoBehaviour
 
         isKb = true;
 
-        if (isKb)
+        shouldFlip = false;
+
+        if (isKb && rb != null)
         {
             if (facing == 1)
             {
-                rb.velocity = new Vector2(-kbForceX, kbForceY);
+                rb.AddForce(new Vector2(-kbForceX, kbForceY), ForceMode2D.Impulse);
                 isKb = false;
+                shouldFlip = true;
             }
             else if (facing == -1)
             {
-                rb.velocity = new Vector2(kbForceX, kbForceY);
+                rb.AddForce(new Vector2(kbForceX, kbForceY), ForceMode2D.Impulse);
                 isKb = false;
+                shouldFlip = true;
             }
         }
         Invoke(nameof(StopKB), 0.15f);
@@ -203,17 +236,11 @@ public class EnemyController : MonoBehaviour
         {
             sprite.color = new Color(0.68f, 0.17f, 0.17f, 0.90f);
 
-            //sprite.enabled = true;
-
             yield return new WaitForSeconds(0.15f);
 
             sprite.color = normalColor;
 
-            //sprite.enabled = false; 
-
             yield return new WaitForSeconds(0.15f);
-
-            //sprite.enabled = true;
         }
     }
 
@@ -231,7 +258,7 @@ public class EnemyController : MonoBehaviour
 
     void Flip()
     {
-        if (isFacingLeft && rb.velocity.x > 0f || !isFacingLeft && rb.velocity.x < 0f)
+        if (shouldFlip && isFacingLeft && rb.velocity.x > 0f || !isFacingLeft && rb.velocity.x < 0f)
         {
             isFacingLeft = !isFacingLeft;
             transform.Rotate(0, 180, 0);

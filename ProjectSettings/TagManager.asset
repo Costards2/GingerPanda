@@ -6,10 +6,10 @@ TagManager:
   tags:
   - Enemy
   - Leaf
-  - Projectile
   - GoThroughPlatform
   - Boss
   - EnemyGolem
+  - Projectile
   layers:
   - Default
   - TransparentFX
@@ -22,8 +22,8 @@ TagManager:
   - 'Enemy '
   - 'Interactable '
   - Projectile
-  - 'Player '
-  - 
+  - Player
+  - PlayerDashThrough
   - 
   - 
   - 

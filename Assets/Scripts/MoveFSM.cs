@@ -38,7 +38,7 @@ public class MoveFSM : MonoBehaviour
     bool jumpInput = false;
     public bool dashInput = false;
     public float dashingPower = 14f;
-    public float dashingTime = 0.2f;
+    public float dashingTime = 0.35f;
     public float dashingCooldown = 1f;
     bool finishedShooting;
 
@@ -93,11 +93,13 @@ public class MoveFSM : MonoBehaviour
     [SerializeField] private LayerMask groundLayer;
     [SerializeField] private Transform wallCheck;
     [SerializeField] private LayerMask wallLayer;
+    [SerializeField] private LayerMask Player;
     [SerializeField] private TrailRenderer trail;
     [SerializeField] private Animator animator;
     [SerializeField] private CapsuleCollider2D playerCollider;
     private GameObject goThroughPlatform;
     public ManaSystem manaSystem;
+    bool imortal = false;
 
     Vector2 vertical;
 
@@ -393,11 +395,17 @@ public class MoveFSM : MonoBehaviour
         isDashing = true;
         float originalGravity = rb.gravityScale;
         rb.gravityScale = 0f;
+        //playerCollider.excludeLayers = 8;
+        gameObject.layer = LayerMask.NameToLayer("PlayerDashThrough"); //Ailu atravessa inimigos
+
         rb.velocity = new Vector2(moveDirection.x * dashingPower, 0f);
         trail.emitting = true;
         yield return new WaitForSeconds(dashingTime);
         trail.emitting = false;
         rb.gravityScale = originalGravity;
+
+        gameObject.layer = LayerMask.NameToLayer("Player"); // Ailu não atravessa inimigos 
+        //playerCollider.excludeLayers = 0;
         isDashing = false;
         yield return new WaitForSeconds(dashingCooldown);
         canDash = true;
@@ -631,15 +639,15 @@ public class MoveFSM : MonoBehaviour
         {   
             if(enemy.CompareTag("Enemy"))
             {
-                enemy.GetComponent<EnemyFSM>().TakeDamage(20);
+                enemy.GetComponent<EnemyFSM>().TakeDamage(25);
             }
             else if (enemy.CompareTag("EnemyGolem"))
             {
-                enemy.GetComponent<EnemyController>().TakeDamage(20);
+                enemy.GetComponent<GolemScript>().TakeDamage(25);
             }
             else if (enemy.CompareTag("Boss"))
             {
-                enemy.GetComponent<Boss>().TakeDamage(20);
+                enemy.GetComponent<Boss>().TakeDamage(25);
             }
         }
 
@@ -691,8 +699,12 @@ public class MoveFSM : MonoBehaviour
 
     public void ReceiveDamage(int damage)
     {
-        playerHealth = playerHealth - damage;
-        state = State.TakeDamage;
+        if (!imortal)
+        {
+            playerHealth = playerHealth - damage;
+            StartCoroutine(Imortal());
+            state = State.TakeDamage;
+        }
     }
 
     private void OnCollisionExit2D(Collision2D collision)
@@ -748,13 +760,15 @@ public class MoveFSM : MonoBehaviour
         Invoke(nameof(StopKB), 0.15f);
     }
 
-    public IEnumerator Damage()
+    IEnumerator Damage()
     {
         animator.Play("TakeDamage");
 
         for ( int i = 0; i < 2; i++ ) 
         {
-            sprite.color = new Color(0.86f, 0.4f, 0.4f, 0.90f);
+            //sprite.color = new Color(0.86f, 0.4f, 0.4f, 0.90f); Esse é o vermelho
+
+            sprite.color = new Color(1,1,1, 0.01f);
 
             //sprite.enabled = true;
 
@@ -768,6 +782,15 @@ public class MoveFSM : MonoBehaviour
 
             //sprite.enabled = true;
         }
+    }
+
+    IEnumerator Imortal()
+    {
+        imortal = true;
+        gameObject.layer = LayerMask.NameToLayer("PlayerDashThrough"); //Ailu atravessa inimigos
+        yield return new WaitForSeconds(0.75f);
+        gameObject.layer = LayerMask.NameToLayer("Player"); // Ailu não atravessa inimigos
+        imortal = false;
     }
 
     void StopKB()

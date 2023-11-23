@@ -130,7 +130,7 @@ public class EnemyFSM : MonoBehaviour
         walkSpeed = currentWalkSpeed;
     }
 
-    public IEnumerator Damage()
+    IEnumerator Damage()
     {
         for (int i = 0; i < 1; i++)
         {
