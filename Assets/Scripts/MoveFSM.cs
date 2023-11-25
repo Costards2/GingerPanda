@@ -1,10 +1,13 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
+using Unity.VisualScripting;
 using UnityEditor.Rendering;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.Rendering.Universal;
 using UnityEngine.UI;
+using static UnityEngine.InputManagerEntry;
+using static UnityEngine.UIElements.UxmlAttributeDescription;
 
 public class MoveFSM : MonoBehaviour
 {
@@ -13,7 +16,7 @@ public class MoveFSM : MonoBehaviour
     public bool canMove = true;
     [SerializeField] private float speed = 8f;
     private float jumpingPower = 16f;
-    private bool isFacingRight = true;
+    public bool isFacingRight = true;
     Vector2 moveDirection;
     private bool canJump = true;
     public bool doNothing = false;
@@ -84,7 +87,8 @@ public class MoveFSM : MonoBehaviour
     private bool isKb = false;
 
     [Header("Base Components")]
-    public GameObject player; 
+    public GameObject player;
+    public GameObject playerEverything;
     [SerializeField] private Transform InteractableCheck;
     [SerializeField] private LayerMask interactableLayer;
     [SerializeField] private Rigidbody2D rb;
@@ -100,6 +104,7 @@ public class MoveFSM : MonoBehaviour
     private GameObject goThroughPlatform;
     public ManaSystem manaSystem;
     bool imortal = false;
+    Vector2 damageRB;
 
     Vector2 vertical;
 
@@ -352,7 +357,17 @@ public class MoveFSM : MonoBehaviour
         if (isFacingRight && horizontalInput < 0f || !isFacingRight && horizontalInput > 0f)
         {
             isFacingRight = !isFacingRight;
-            transform.Rotate(0, 180, 0);
+
+            if(isFacingRight) 
+            {
+                sprite.flipX = false;
+            }
+            else
+            {
+                sprite.flipX = true;
+            }
+
+            playerEverything.transform.Rotate(0, 180, 0);
         }
     }
 
@@ -397,13 +412,13 @@ public class MoveFSM : MonoBehaviour
         rb.gravityScale = 0f;
         //playerCollider.excludeLayers = 8;
         gameObject.layer = LayerMask.NameToLayer("PlayerDashThrough"); //Ailu atravessa inimigos
-
         rb.velocity = new Vector2(moveDirection.x * dashingPower, 0f);
         trail.emitting = true;
+        
         yield return new WaitForSeconds(dashingTime);
+        
         trail.emitting = false;
         rb.gravityScale = originalGravity;
-
         gameObject.layer = LayerMask.NameToLayer("Player"); // Ailu não atravessa inimigos 
         //playerCollider.excludeLayers = 0;
         isDashing = false;
@@ -414,6 +429,7 @@ public class MoveFSM : MonoBehaviour
     void WallSlide()
     {
         animator.Play("WallSlide");
+        rb.velocity = new Vector2(0,-0.7f); //Prevent the player from sliding after jumpin to another wall (Me deu vontade ai escrevi fiz em Inglês)
 
         rb.velocity = new Vector2(rb.velocity.x, Mathf.Clamp(rb.velocity.y, -wallSlidingSpeed, float.MaxValue));
 
@@ -444,7 +460,16 @@ public class MoveFSM : MonoBehaviour
         if (transform.localScale.x != wallJumpingDirection)
         {
             isFacingRight = !isFacingRight;
-            transform.Rotate(0, 180, 0);
+            if (isFacingRight)
+            {
+                sprite.flipX = false;
+            }
+            else
+            {
+                sprite.flipX = true;
+            }
+
+            playerEverything.transform.Rotate(0, 180, 0);
         }
 
         rb.velocity = new Vector2(wallJumpingDirection * wallJumpingPower.x, wallJumpingPower.y);
@@ -455,7 +480,11 @@ public class MoveFSM : MonoBehaviour
 
         StartCoroutine(WallJumpDelay());
 
-        if (!IsGrounded())
+        if (IsWalled() && !IsGrounded())
+        {
+            state = State.WallSlide;
+        }
+        else if (!IsGrounded())
         {
             state = State.Glide;
         }
@@ -465,14 +494,6 @@ public class MoveFSM : MonoBehaviour
             if (canDash && dashInput && horizontalInput != 0)
             {
                 state = State.Dash;
-            }
-            else if (IsWalled() && !IsGrounded())
-            {
-                state = State.WallSlide;
-            }
-            else if (!IsGrounded())
-            {
-                state = State.Glide;
             }
         }
     }
@@ -671,29 +692,12 @@ public class MoveFSM : MonoBehaviour
 
     private void OnCollisionEnter2D(Collision2D collision)
     {
-        if (collision.gameObject.CompareTag("Enemy") || collision.gameObject.CompareTag("EnemyGolem"))
+        if (collision.gameObject.CompareTag("Enemy") || collision.gameObject.CompareTag("EnemyGolem") || collision.gameObject.CompareTag("Projectile"))
         {
-            ReceiveDamage(1); 
-
-            //playerHealth--;
-
-            //if (playerHealth == 2)
-            //{
-            //    Life1.SetActive(false);
-            //    Life2.GetComponent<Image>().color = Color.yellow;
-            //    Life3.GetComponent<Image>().color = Color.yellow;
-            //}
-            //else if (playerHealth == 1)
-            //{
-            //    Life2.SetActive(false);
-            //    Life3.GetComponent<Image>().color = Color.red;
-            //}
-            //else if (playerHealth == 0)
-            //{
-            //    Life3.SetActive(false);
-            //}
-
-            //state = State.TakeDamage;   
+            damageRB = player.transform.InverseTransformPoint(collision.transform.position);//You can use Transform.InverseTransformPoint to find the enemy's relative position from the perspective of the player.
+                                                                                            //This Vector2 damageRB is a vector that describes the enemy's position offset from the player's position along the player's left/right, up/down, and forward/back axes.
+            ReceiveDamage(1);
+                                                                                           
         }
     }
 
@@ -702,7 +706,6 @@ public class MoveFSM : MonoBehaviour
         if (!imortal)
         {
             playerHealth = playerHealth - damage;
-            StartCoroutine(Imortal());
             state = State.TakeDamage;
         }
     }
@@ -717,8 +720,6 @@ public class MoveFSM : MonoBehaviour
 
     public void TakeDamage()
     {
-        StartCoroutine(Damage());
-
         if (playerHealth == 2)
         {
             Life1.SetActive(false);
@@ -735,9 +736,9 @@ public class MoveFSM : MonoBehaviour
             Life3.SetActive(false);
         }
 
-        isKb = true;
-        
         //A partir daqui é para dar Knockback no Player e ver se ele ainda tem vidas
+
+        isKb = true;
 
         if (playerHealth <= 0)
         {
@@ -745,22 +746,25 @@ public class MoveFSM : MonoBehaviour
         }
         if (isKb)
         {
-            if(isFacingRight) 
+            if (damageRB.x > 0)
             {
                 rb.velocity = new Vector2(-kbForceX, kbForceY);
                 isKb = false;
             }
-            else if (!isFacingRight)
+            else if (damageRB.x < 0)
             {
                 rb.velocity = new Vector2(kbForceX, kbForceY);
                 isKb = false;
             }
         }
 
+        StartCoroutine(Imortal());
+        StartCoroutine(VisualDamage());
+
         Invoke(nameof(StopKB), 0.15f);
     }
 
-    IEnumerator Damage()
+    IEnumerator VisualDamage()
     {
         animator.Play("TakeDamage");
 
