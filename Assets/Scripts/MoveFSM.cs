@@ -1,10 +1,13 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
+using Unity.VisualScripting;
 using UnityEditor.Rendering;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.Rendering.Universal;
 using UnityEngine.UI;
+using static UnityEngine.InputManagerEntry;
+using static UnityEngine.UIElements.UxmlAttributeDescription;
 
 public class MoveFSM : MonoBehaviour
 {
@@ -13,22 +16,21 @@ public class MoveFSM : MonoBehaviour
     public bool canMove = true;
     [SerializeField] private float speed = 8f;
     private float jumpingPower = 16f;
-    private bool isFacingRight = true;
+    public bool isFacingRight = true;
     Vector2 moveDirection;
     private bool canJump = true;
     public bool doNothing = false;
   
     [Header("Everything related to Wall")]
     private readonly bool isWallSliding;
-    private readonly float wallSlidingSpeed = 2f;
+    private readonly float wallSlidingSpeed = 1f;
     private bool isWallJumping;
     private float wallJumpingDirection;
-    //WallJumpPowerX era 9,5f
-    private Vector2 wallJumpingPower = new (50f, 14f);
+    private Vector2 wallJumpingPower = new (16f, 14f);
     public float facing = 0;
     bool canWallJump = true;
     public float wallJumpTime = 0.3f;
-    public float wallJumpCooldown = 1f;
+    public float wallJumpCooldown = 0.5f;
     private float wallJumpingCounter;
     private readonly float wallJumpingDuration = 0.2f;
     private readonly float wallJumpingTime = 0.2f;
@@ -39,20 +41,20 @@ public class MoveFSM : MonoBehaviour
     bool jumpInput = false;
     public bool dashInput = false;
     public float dashingPower = 14f;
-    public float dashingTime = 0.2f;
+    public float dashingTime = 0.35f;
     public float dashingCooldown = 1f;
+    bool finishedShooting;
 
     [Header("Shoot")]
     public float shootCost = 20f; 
     public GameObject bulletPrefab;
     public Transform shootingPoint;
-    readonly float shootingTime = 0.75f;
-    readonly float shootingCooldown = 0.5f;
+    readonly float shootingTime = 0.25f;
     public bool shootInput;
-    public bool canShoot = true;
-    public bool shootCooldown;
+    public float ShootingRate = 0.5f;
+    float nextShot = 0f;
 
-   [Header("Melee ATK")]
+    [Header("Melee ATK")]
     bool atkInput;
     private readonly float atkRange = 0.5f;
     public LayerMask enemyLayer;
@@ -85,7 +87,8 @@ public class MoveFSM : MonoBehaviour
     private bool isKb = false;
 
     [Header("Base Components")]
-    public GameObject player; 
+    public GameObject player;
+    public GameObject playerEverything;
     [SerializeField] private Transform InteractableCheck;
     [SerializeField] private LayerMask interactableLayer;
     [SerializeField] private Rigidbody2D rb;
@@ -94,11 +97,14 @@ public class MoveFSM : MonoBehaviour
     [SerializeField] private LayerMask groundLayer;
     [SerializeField] private Transform wallCheck;
     [SerializeField] private LayerMask wallLayer;
+    [SerializeField] private LayerMask Player;
     [SerializeField] private TrailRenderer trail;
     [SerializeField] private Animator animator;
     [SerializeField] private CapsuleCollider2D playerCollider;
     private GameObject goThroughPlatform;
     public ManaSystem manaSystem;
+    bool imortal = false;
+    Vector2 damageRB;
 
     Vector2 vertical;
 
@@ -121,7 +127,7 @@ public class MoveFSM : MonoBehaviour
         jumpInput = Input.GetKey(KeyCode.Space);
         horizontalInput = Input.GetAxisRaw("Horizontal");
         dashInput = Input.GetKey(KeyCode.LeftShift);
-        shootInput = Input.GetKeyDown(KeyCode.L);
+        shootInput = Input.GetKey(KeyCode.L);
         atkInput = Input.GetKey(KeyCode.K);
         leafInput = Input.GetKeyDown(KeyCode.Q);
 
@@ -158,6 +164,8 @@ public class MoveFSM : MonoBehaviour
 
     void FixedUpdate()
     {
+        moveDirection = new Vector2(horizontalInput, 0).normalized;
+
         if (isDashing)
         {
             return;
@@ -177,9 +185,6 @@ public class MoveFSM : MonoBehaviour
             case State.TakeDamage: TakeDamage(); break;
             case State.DoNothing: DoNothing(); break;
         }
-
-        moveDirection = new Vector2(horizontalInput, 0).normalized;
-
     }
 
     void IdleState()
@@ -201,7 +206,7 @@ public class MoveFSM : MonoBehaviour
             {
                 state = State.Jump;
             }
-            else if (horizontalInput != 0f)
+            else if (horizontalInput != 0f && rb.velocity.y == 0)
             {
                 state = State.Run;
             }
@@ -213,7 +218,7 @@ public class MoveFSM : MonoBehaviour
             {
                 state = State.DoNothing;
             }
-            if (shootInput && manaSystem.currentMana > shootCost && canShoot && !shootCooldown)
+            if (shootInput && manaSystem.currentMana > shootCost)
             {
                 state = State.Shoot;
             }
@@ -247,7 +252,7 @@ public class MoveFSM : MonoBehaviour
             {
                 state = State.Jump;
             }
-            else if (horizontalInput == 0f)
+            else if (horizontalInput == 0f && rb.velocity.y == 0 && rb.velocity.x == 0)
             {
                 state = State.Idle;
             }
@@ -260,7 +265,7 @@ public class MoveFSM : MonoBehaviour
             {
                 state = State.DoNothing;
             }
-            if (shootInput && manaSystem.currentMana > shootCost && canShoot && !shootCooldown)
+            if (shootInput && manaSystem.currentMana > shootCost && Time.time >= nextShot) // O "Time.time >= nextShot" está aqui se não o player muda de estado para ver se pode atirar
             {
                 rb.velocity = Vector2.zero;
                 state = State.Shoot;
@@ -280,7 +285,7 @@ public class MoveFSM : MonoBehaviour
 
         rb.velocity = rb.velocity.y * Vector2.up + speed * horizontalInput * Vector2.right;
 
-        if (horizontalInput != 0f && IsGrounded())
+        if (horizontalInput != 0f && IsGrounded() && rb.velocity.y == 0)
         {
             state = State.Run;
         }
@@ -307,9 +312,12 @@ public class MoveFSM : MonoBehaviour
 
     void GlideState()
     {
-        Flip();
 
-        rb.velocity = rb.velocity.y * Vector2.up + speed * horizontalInput * Vector2.right;
+        if (!isWallJumping) // If necessatio para com que o player consiga completar o WallJump se não ele já entra em queda 
+        {
+            rb.velocity = rb.velocity.y * Vector2.up + speed * horizontalInput * Vector2.right;
+            Flip();
+        }
 
         if (rb.velocity.y < -0.2f)
         {
@@ -323,15 +331,20 @@ public class MoveFSM : MonoBehaviour
         else if (IsWalled() && !IsGrounded())
         {
             state = State.WallSlide;
+
+        }
+        else if (atkInput)
+        {
+            state = State.Atk;
         }
 
         if (IsGrounded())
         {
-            if (horizontalInput != 0f)
+            if (horizontalInput != 0f && rb.velocity.y == 0)
             {
                 state = State.Run;
             }
-            else if (horizontalInput == 0f)
+            else if (horizontalInput == 0f && rb.velocity.y == 0 && rb.velocity.x == 0)
             {
                 state = State.Idle;
             }
@@ -344,7 +357,17 @@ public class MoveFSM : MonoBehaviour
         if (isFacingRight && horizontalInput < 0f || !isFacingRight && horizontalInput > 0f)
         {
             isFacingRight = !isFacingRight;
-            transform.Rotate(0, 180, 0);
+
+            if(isFacingRight) 
+            {
+                sprite.flipX = false;
+            }
+            else
+            {
+                sprite.flipX = true;
+            }
+
+            playerEverything.transform.Rotate(0, 180, 0);
         }
     }
 
@@ -362,7 +385,7 @@ public class MoveFSM : MonoBehaviour
             {
                 state = State.Jump;
             }
-            else if (horizontalInput != 0f)
+            else if (horizontalInput != 0f && rb.velocity.y == 0)
             {
                 state = State.Run;
             }
@@ -387,11 +410,17 @@ public class MoveFSM : MonoBehaviour
         isDashing = true;
         float originalGravity = rb.gravityScale;
         rb.gravityScale = 0f;
+        //playerCollider.excludeLayers = 8;
+        gameObject.layer = LayerMask.NameToLayer("PlayerDashThrough"); //Ailu atravessa inimigos
         rb.velocity = new Vector2(moveDirection.x * dashingPower, 0f);
         trail.emitting = true;
+        
         yield return new WaitForSeconds(dashingTime);
+        
         trail.emitting = false;
         rb.gravityScale = originalGravity;
+        gameObject.layer = LayerMask.NameToLayer("Player"); // Ailu não atravessa inimigos 
+        //playerCollider.excludeLayers = 0;
         isDashing = false;
         yield return new WaitForSeconds(dashingCooldown);
         canDash = true;
@@ -400,14 +429,15 @@ public class MoveFSM : MonoBehaviour
     void WallSlide()
     {
         animator.Play("WallSlide");
-   
+        rb.velocity = new Vector2(0,-0.7f); //Prevent the player from sliding after jumpin to another wall (Me deu vontade ai escrevi fiz em Inglês)
+
         rb.velocity = new Vector2(rb.velocity.x, Mathf.Clamp(rb.velocity.y, -wallSlidingSpeed, float.MaxValue));
 
         if (horizontalInput == facing)
         {
             state = State.Glide;
         }
-        else if (jumpInput && canWallJump)
+        else if (jumpInput && canWallJump && canJump)
         {
             state = State.WallJump;
         }
@@ -430,12 +460,19 @@ public class MoveFSM : MonoBehaviour
         if (transform.localScale.x != wallJumpingDirection)
         {
             isFacingRight = !isFacingRight;
-            transform.Rotate(0, 180, 0);
+            if (isFacingRight)
+            {
+                sprite.flipX = false;
+            }
+            else
+            {
+                sprite.flipX = true;
+            }
+
+            playerEverything.transform.Rotate(0, 180, 0);
         }
 
         rb.velocity = new Vector2(wallJumpingDirection * wallJumpingPower.x, wallJumpingPower.y);
-
-        Debug.Log(rb.velocity);
 
         wallJumpingCounter = 0f;
 
@@ -443,7 +480,11 @@ public class MoveFSM : MonoBehaviour
 
         StartCoroutine(WallJumpDelay());
 
-        if (!IsGrounded())
+        if (IsWalled() && !IsGrounded())
+        {
+            state = State.WallSlide;
+        }
+        else if (!IsGrounded())
         {
             state = State.Glide;
         }
@@ -453,14 +494,6 @@ public class MoveFSM : MonoBehaviour
             if (canDash && dashInput && horizontalInput != 0)
             {
                 state = State.Dash;
-            }
-            else if (IsWalled() && !IsGrounded())
-            {
-                state = State.WallSlide;
-            }
-            else if (!IsGrounded())
-            {
-                state = State.Glide;
             }
         }
     }
@@ -486,45 +519,105 @@ public class MoveFSM : MonoBehaviour
         return Physics2D.OverlapCircle(wallCheck.position, 0.1f, wallLayer);
     }
 
-    void Shoot()
+    //void Shoot()
+    //{
+    //    animator.Play("Shoot");
+
+    //    finishedShooting = false;
+
+    //    manaSystem.UseAbility(shootCost);
+
+    //    StartCoroutine(ShootDelay());
+
+    //    Debug.Log(finishedShooting);
+
+    //    if (jumpInput && canJump && finishedShooting)
+    //    {
+    //        state = State.Jump;
+    //    }
+    //    else if (horizontalInput != 0f && rb.velocity.y == 0 && finishedShooting)
+    //    {
+    //        state = State.Run;
+    //    }
+    //    else if (horizontalInput == 0f && rb.velocity.y == 0 && rb.velocity.x == 0 && finishedShooting)
+    //    {
+    //        state = State.Idle;
+    //    }
+    //    else if (!IsGrounded())
+    //    {
+    //        state = State.Glide;
+    //    }
+    //}
+
+    //public IEnumerator ShootDelay()
+    //{
+    //    //Debug.Log("ShootDelay: Start of coroutine");
+
+    //    shootCooldown = true;
+    //    canMove = false;
+
+    //    //Debug.Log("ShootDelay: Before Instantiate");
+
+    //    shootingPoint.rotation = gameObject.transform.rotation;
+    //    Instantiate(bulletPrefab, shootingPoint.position, shootingPoint.rotation);
+
+    //    //Debug.Log("ShootDelay: After Instantiate");
+
+    //    yield return new WaitForSeconds(shootingTime);
+
+    //    //Debug.Log("ShootDelay: After WaitForSeconds");
+
+    //    finishedShooting = true;
+
+    //    //Debug.Log("ShootDelay: After finishedShooting = true");
+
+    //    canMove = true;
+    //    shootCooldown = false;
+
+    //    //Debug.Log("ShootDelay: End of coroutine");
+    //}
+
+    private void Shoot()
     {
-        animator.Play("Shoot");
-
-        manaSystem.UseAbility(shootCost);
-
-        StartCoroutine(ShootDelay());
-
-        if (jumpInput && canJump)
+        if (Time.time >= nextShot)
         {
-            state = State.Jump;
+            finishedShooting = false;
+
+            manaSystem.UseAbility(shootCost);
+
+            StartCoroutine(ShootDelay());
+
+            nextShot = Time.time + 1f / ShootingRate;
         }
-        else if (horizontalInput != 0f)
-        {
-            state = State.Run;
-        }
-        else if (horizontalInput == 0f)
+
+        else if (horizontalInput == 0f && rb.velocity.y == 0 && rb.velocity.x == 0 && finishedShooting)
         {
             state = State.Idle;
         }
-       else if (shootInput && manaSystem.currentMana > shootCost && canShoot)
-       {
-            state = State.Shoot;
-       }
-       else if (!IsGrounded())
-       {
+        else if (horizontalInput != 0f && rb.velocity.y == 0 && finishedShooting)
+        {
+            state = State.Run;
+        }
+        else if (atkInput && finishedShooting)
+        {
+            state = State.Atk;
+        }
+        else if (!IsGrounded())
+        {
             state = State.Glide;
-       }
+        }
     }
 
-    public IEnumerator ShootDelay()
+    IEnumerator ShootDelay()
     {
-        shootCooldown = true;
-        canMove = false;
+        animator.Play("Shoot");
+
         shootingPoint.rotation = gameObject.transform.rotation;
         Instantiate(bulletPrefab, shootingPoint.position, shootingPoint.rotation);
+
         yield return new WaitForSeconds(shootingTime);
-        shootCooldown = false;
-        canMove = true;
+
+        finishedShooting = true;     
     }
 
     private void Atk()
@@ -537,17 +630,21 @@ public class MoveFSM : MonoBehaviour
             nextAtkTime = Time.time + 1f / atkRate;
         }
 
-        else if (horizontalInput == 0f && isAtking == false)
+        else if (horizontalInput == 0f && !isAtking && rb.velocity.y == 0 && rb.velocity.x == 0)
         {
             state = State.Idle;
         }
-        else if (horizontalInput != 0f && isAtking == false)
+        else if (horizontalInput != 0f && !isAtking && rb.velocity.y == 0)
         {
             state = State.Run;
         }
         else if (atkInput)
         {
             state = State.Atk;
+        }
+        else if (!IsGrounded() && !isAtking)
+        {
+            state = State.Glide;
         }
     }
 
@@ -560,8 +657,19 @@ public class MoveFSM : MonoBehaviour
         Collider2D[] hitEnemies = Physics2D.OverlapCircleAll(atkPoint.position, atkRange, enemyLayer);
 
         foreach (Collider2D enemy in hitEnemies)
-        {
-            enemy.GetComponent<EnemyFSM>().TakeDamage(20);
+        {   
+            if(enemy.CompareTag("Enemy"))
+            {
+                enemy.GetComponent<EnemyFSM>().TakeDamage(25);
+            }
+            else if (enemy.CompareTag("EnemyGolem"))
+            {
+                enemy.GetComponent<GolemScript>().TakeDamage(25);
+            }
+            else if (enemy.CompareTag("Boss"))
+            {
+                enemy.GetComponent<Boss>().TakeDamage(25);
+            }
         }
 
         yield return new WaitForSeconds(0.3f);
@@ -584,27 +692,21 @@ public class MoveFSM : MonoBehaviour
 
     private void OnCollisionEnter2D(Collision2D collision)
     {
-        if (collision.gameObject.CompareTag("Enemy"))
+        if (collision.gameObject.CompareTag("Enemy") || collision.gameObject.CompareTag("EnemyGolem") || collision.gameObject.CompareTag("Projectile"))
         {
+            damageRB = player.transform.InverseTransformPoint(collision.transform.position);//You can use Transform.InverseTransformPoint to find the enemy's relative position from the perspective of the player.
+                                                                                            //This Vector2 damageRB is a vector that describes the enemy's position offset from the player's position along the player's left/right, up/down, and forward/back axes.
+            ReceiveDamage(1);
+                                                                                           
+        }
+    }
 
-            playerHealth--;
-
-            if (playerHealth == 2)
-            {
-                Life1.SetActive(false);
-                Life2.GetComponent<Image>().color = Color.yellow;
-                Life3.GetComponent<Image>().color = Color.yellow;
-            }
-            else if (playerHealth == 1)
-            {
-                Life2.SetActive(false);
-                Life3.GetComponent<Image>().color = Color.red;
-            }
-            else if (playerHealth == 0)
-            {
-                Life3.SetActive(false);
-            }
-            state = State.TakeDamage;   
+    public void ReceiveDamage(int damage)
+    {
+        if (!imortal)
+        {
+            playerHealth = playerHealth - damage;
+            state = State.TakeDamage;
         }
     }
 
@@ -616,13 +718,27 @@ public class MoveFSM : MonoBehaviour
         }
     }
 
-    void TakeDamage()
+    public void TakeDamage()
     {
-        StartCoroutine(Damage());
+        if (playerHealth == 2)
+        {
+            Life1.SetActive(false);
+            Life2.GetComponent<Image>().color = Color.yellow;
+            Life3.GetComponent<Image>().color = Color.yellow;
+        }
+        else if (playerHealth == 1)
+        {
+            Life2.SetActive(false);
+            Life3.GetComponent<Image>().color = Color.red;
+        }
+        else if (playerHealth == 0)
+        {
+            Life3.SetActive(false);
+        }
+
+        //A partir daqui é para dar Knockback no Player e ver se ele ainda tem vidas
 
         isKb = true;
-        
-        //A partir daqui é para dar Knockback no Player e ver se ele ainda tem vidas
 
         if (playerHealth <= 0)
         {
@@ -630,28 +746,33 @@ public class MoveFSM : MonoBehaviour
         }
         if (isKb)
         {
-            if(isFacingRight) 
+            if (damageRB.x > 0)
             {
                 rb.velocity = new Vector2(-kbForceX, kbForceY);
                 isKb = false;
             }
-            else if (!isFacingRight)
+            else if (damageRB.x < 0)
             {
                 rb.velocity = new Vector2(kbForceX, kbForceY);
                 isKb = false;
             }
         }
 
+        StartCoroutine(Imortal());
+        StartCoroutine(VisualDamage());
+
         Invoke(nameof(StopKB), 0.15f);
     }
 
-    public IEnumerator Damage()
+    IEnumerator VisualDamage()
     {
         animator.Play("TakeDamage");
 
-        for( int i = 0; i < 2; i++ ) 
+        for ( int i = 0; i < 2; i++ ) 
         {
-            sprite.color = new Color(0.86f, 0.4f, 0.4f, 0.90f);
+            //sprite.color = new Color(0.86f, 0.4f, 0.4f, 0.90f); Esse é o vermelho
+
+            sprite.color = new Color(1,1,1, 0.01f);
 
             //sprite.enabled = true;
 
@@ -659,12 +780,21 @@ public class MoveFSM : MonoBehaviour
 
             sprite.color = normalColor;
             
-            //sprite.enabled = false; 
+            //sprite.enabled = false;
 
             yield return new WaitForSeconds(0.15f);
 
             //sprite.enabled = true;
         }
+    }
+
+    IEnumerator Imortal()
+    {
+        imortal = true;
+        gameObject.layer = LayerMask.NameToLayer("PlayerDashThrough"); //Ailu atravessa inimigos
+        yield return new WaitForSeconds(0.75f);
+        gameObject.layer = LayerMask.NameToLayer("Player"); // Ailu não atravessa inimigos
+        imortal = false;
     }
 
     void StopKB()
