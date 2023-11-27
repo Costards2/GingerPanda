@@ -4,6 +4,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 using System.Xml.Serialization;
+using System.Security.Cryptography;
 
 public class DialogueNPC : MonoBehaviour
 {
@@ -26,7 +27,7 @@ public class DialogueNPC : MonoBehaviour
     public bool readyToTalk;
     public bool startDialogue;
     public bool firstTalk = true;
-    public bool dontTalkAgaing = false; 
+    public bool dontTalkAgaing = false;
 
     void Update()
     {
@@ -41,9 +42,24 @@ public class DialogueNPC : MonoBehaviour
         //    //}
         //}
 
-        if (dialogueText.text == dialogueNpc[dialogueIndex] && Input.GetKey(KeyCode.Space))
+        if (startDialogue)
         {
-            NextDialogue();
+            if (Input.GetKeyDown(KeyCode.Space))
+            {
+                if (dialogueText.text != dialogueNpc[dialogueIndex])
+                {
+                    StopAllCoroutines();
+                    dialogueText.text = dialogueNpc[dialogueIndex];
+                }
+                else if (dialogueIndex < dialogueNpc.Length - 1)
+                {
+                    NextDialogue();
+                }
+                else
+                {
+                    EndDialogue();
+                }
+            }
         }
     }
 
@@ -65,15 +81,17 @@ public class DialogueNPC : MonoBehaviour
         {
             StartCoroutine(ShowDialogue());
         }
-        if (dialogueIndex == dialogueNpc.Length)
-        {
-            readyToTalk = false;
-            dialoguePanel.SetActive(false);
-            startDialogue = false;
-            dialogueIndex = 0;
-            FindObjectOfType<MoveFSM>().doNothing = false;
-        }
     }
+
+    void EndDialogue()
+    {
+        readyToTalk = false;
+        dialoguePanel.SetActive(false);
+        startDialogue = false;
+        dialogueIndex = 0;
+        FindObjectOfType<MoveFSM>().doNothing = false;
+    }
+
 
     IEnumerator ShowDialogue()
     {

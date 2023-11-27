@@ -6,9 +6,14 @@ TagManager:
   tags:
   - Enemy
   - Leaf
-  - Projectile
   - GoThroughPlatform
   - Boss
+  - EnemyGolem
+  - Projectile
+  - CheckPoint
+  - AlredyChecked
+  - Collectable
+  - BossVine
   layers:
   - Default
   - TransparentFX
@@ -21,10 +26,10 @@ TagManager:
   - 'Enemy '
   - 'Interactable '
   - Projectile
-  - 'Player '
-  - 
-  - 
-  - 
+  - Player
+  - PlayerDashThrough
+  - EnemyProjectile
+  - BossVines
   - 
   - 
   - 
