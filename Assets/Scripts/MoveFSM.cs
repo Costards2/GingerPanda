@@ -615,7 +615,7 @@ public class MoveFSM : MonoBehaviour
     {
         playerDied++;
 
-        if(playerDied == 2)
+        if(playerDied > 2)
         {
             GameOver();
         }
@@ -630,6 +630,8 @@ public class MoveFSM : MonoBehaviour
             Life3.SetActive(true);
             Life2.GetComponent<Image>().color = normalColorLives;
             Life3.GetComponent<Image>().color = normalColorLives;
+            
+            state = State.Idle;
 
             transform.position = playerCheckPoint;
 
@@ -839,6 +841,7 @@ public class MoveFSM : MonoBehaviour
 
     private void OnCollisionEnter2D(Collision2D collision)
     {
+        //Better use layer next time
         if (collision.gameObject.CompareTag("Enemy") || collision.gameObject.CompareTag("EnemyGolem") || collision.gameObject.CompareTag("Projectile"))
         {
             damageRB = player.transform.InverseTransformPoint(collision.transform.position);//You can use Transform.InverseTransformPoint to find the enemy's relative position from the perspective of the player.
@@ -862,6 +865,11 @@ public class MoveFSM : MonoBehaviour
             Debug.Log("Coletado");
             collectables++;
             collision.gameObject.SetActive(false);
+        }
+
+        if (collision.gameObject.CompareTag("BossVine"))
+        {
+            ReceiveDamage(1);
         }
     }
 

@@ -66,7 +66,7 @@ public class GolemScript : MonoBehaviour
 
     void Update()
     {
-        Debug.Log(attacked);
+        //Debug.Log(attacked);
         
         timer += Time.deltaTime;
         distanceToPlayer = Vector2.Distance(transform.position, player.position);
