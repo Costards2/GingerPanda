@@ -165,4 +165,4 @@ MonoBehaviour:
   player: {fileID: 0}
   rb: {fileID: 2534376011959612256}
   target: Player
-  force: 0
+  force: 10

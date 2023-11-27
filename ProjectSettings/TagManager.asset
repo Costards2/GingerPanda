@@ -10,6 +10,9 @@ TagManager:
   - Boss
   - EnemyGolem
   - Projectile
+  - CheckPoint
+  - AlredyChecked
+  - Collectable
   layers:
   - Default
   - TransparentFX

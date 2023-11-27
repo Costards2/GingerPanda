@@ -69,7 +69,7 @@ public class MoveFSM : MonoBehaviour
     private Color normalColor;
     private Color normalColorLives;
 
-    //Criar um Script separado para a UI seria o Ideal (eu acho)
+    //Criar um Script separado para a UI seria o Ideal (eu acho) principalmente com Delegates e Events 
 
     [Header("Lives and Leafs")]
     public GameObject Life1;
@@ -79,7 +79,8 @@ public class MoveFSM : MonoBehaviour
     public GameObject Leaf2;
     public GameObject Leaf3;
     public bool leafInput;
-    private int leafs = 0; 
+    private int leafs = 0;
+    [SerializeField] bool imortal = false;
 
     [Header("Knockback")]
     private readonly float kbForceX= 14f;
@@ -101,12 +102,13 @@ public class MoveFSM : MonoBehaviour
     [SerializeField] private TrailRenderer trail;
     [SerializeField] private Animator animator;
     [SerializeField] private CapsuleCollider2D playerCollider;
-    private GameObject goThroughPlatform;
-    public ManaSystem manaSystem;
-    bool imortal = false;
-    Vector2 damageRB;
-
-    Vector2 vertical;
+    [SerializeField] private GameObject goThroughPlatform;
+    [SerializeField] public ManaSystem manaSystem;
+    [SerializeField] Vector2 damageRB;
+    [SerializeField] Vector2 playerCheckPoint;
+    [SerializeField] public int collectables = 0;
+    [SerializeField] Vector2 vertical;
+    [SerializeField] int playerDied;
 
     enum State { Idle, Run, Jump, Glide, Dash, WallSlide, WallJump, Atk, Shoot, TakeDamage, DoNothing }
 
@@ -120,6 +122,7 @@ public class MoveFSM : MonoBehaviour
         sprite = GetComponent<SpriteRenderer>();
         normalColor = sprite.color;
         normalColorLives = Life1.GetComponent<Image>().color;
+        playerCheckPoint = transform.position;
     }
 
     private void Update()
@@ -186,6 +189,8 @@ public class MoveFSM : MonoBehaviour
             case State.DoNothing: DoNothing(); break;
         }
     }
+
+    #region States
 
     void IdleState()
     {
@@ -301,15 +306,6 @@ public class MoveFSM : MonoBehaviour
         state = State.Glide;
     }
 
-    private IEnumerator DisableCollision()
-    {
-        BoxCollider2D platformCollider = goThroughPlatform.GetComponent<BoxCollider2D>();
-
-        Physics2D.IgnoreCollision(playerCollider, platformCollider, true);
-        yield return new WaitForSeconds(0.25f);
-        Physics2D.IgnoreCollision(playerCollider, platformCollider, false);
-    }
-
     void GlideState()
     {
 
@@ -352,25 +348,6 @@ public class MoveFSM : MonoBehaviour
         }
     }
 
-    private void Flip()
-    {
-        if (isFacingRight && horizontalInput < 0f || !isFacingRight && horizontalInput > 0f)
-        {
-            isFacingRight = !isFacingRight;
-
-            if(isFacingRight) 
-            {
-                sprite.flipX = false;
-            }
-            else
-            {
-                sprite.flipX = true;
-            }
-
-            playerEverything.transform.Rotate(0, 180, 0);
-        }
-    }
-
     void Dash()
     {
         animator.Play("Dash");
@@ -402,28 +379,6 @@ public class MoveFSM : MonoBehaviour
         {
             state = State.Glide;
         }
-    }
-
-    public IEnumerator DashTempo()
-    {
-        canDash = false;
-        isDashing = true;
-        float originalGravity = rb.gravityScale;
-        rb.gravityScale = 0f;
-        //playerCollider.excludeLayers = 8;
-        gameObject.layer = LayerMask.NameToLayer("PlayerDashThrough"); //Ailu atravessa inimigos
-        rb.velocity = new Vector2(moveDirection.x * dashingPower, 0f);
-        trail.emitting = true;
-        
-        yield return new WaitForSeconds(dashingTime);
-        
-        trail.emitting = false;
-        rb.gravityScale = originalGravity;
-        gameObject.layer = LayerMask.NameToLayer("Player"); // Ailu não atravessa inimigos 
-        //playerCollider.excludeLayers = 0;
-        isDashing = false;
-        yield return new WaitForSeconds(dashingCooldown);
-        canDash = true;
     }
 
     void WallSlide()
@@ -498,86 +453,12 @@ public class MoveFSM : MonoBehaviour
         }
     }
 
-    IEnumerator WallJumpDelay()
-    {
-        yield return new WaitForSeconds(wallJumpCooldown);
-        canWallJump = true;
-    }
-
     void StopWallJump()
     {
         isWallJumping = false;
     }
 
-    public bool IsGrounded()
-    {
-        return Physics2D.OverlapBox(groundCheck.position, new Vector2(0.1f, 0.1f) ,0.01f, groundLayer);
-    }
-
-    public bool IsWalled()
-    {
-        return Physics2D.OverlapCircle(wallCheck.position, 0.1f, wallLayer);
-    }
-
-    //void Shoot()
-    //{
-    //    animator.Play("Shoot");
-
-    //    finishedShooting = false;
-
-    //    manaSystem.UseAbility(shootCost);
-
-    //    StartCoroutine(ShootDelay());
-
-    //    Debug.Log(finishedShooting);
-
-    //    if (jumpInput && canJump && finishedShooting)
-    //    {
-    //        state = State.Jump;
-    //    }
-    //    else if (horizontalInput != 0f && rb.velocity.y == 0 && finishedShooting)
-    //    {
-    //        state = State.Run;
-    //    }
-    //    else if (horizontalInput == 0f && rb.velocity.y == 0 && rb.velocity.x == 0 && finishedShooting)
-    //    {
-    //        state = State.Idle;
-    //    }
-    //    else if (!IsGrounded())
-    //    {
-    //        state = State.Glide;
-    //    }
-    //}
-
-    //public IEnumerator ShootDelay()
-    //{
-    //    //Debug.Log("ShootDelay: Start of coroutine");
-
-    //    shootCooldown = true;
-    //    canMove = false;
-
-    //    //Debug.Log("ShootDelay: Before Instantiate");
-
-    //    shootingPoint.rotation = gameObject.transform.rotation;
-    //    Instantiate(bulletPrefab, shootingPoint.position, shootingPoint.rotation);
-
-    //    //Debug.Log("ShootDelay: After Instantiate");
-
-    //    yield return new WaitForSeconds(shootingTime);
-
-    //    //Debug.Log("ShootDelay: After WaitForSeconds");
-
-    //    finishedShooting = true;
-
-    //    //Debug.Log("ShootDelay: After finishedShooting = true");
-
-    //    canMove = true;
-    //    shootCooldown = false;
-
-    //    //Debug.Log("ShootDelay: End of coroutine");
-    //}
-
-    private void Shoot()
+    void Shoot()
     {
         if (Time.time >= nextShot)
         {
@@ -608,19 +489,7 @@ public class MoveFSM : MonoBehaviour
         }
     }
 
-    IEnumerator ShootDelay()
-    {
-        animator.Play("Shoot");
-
-        shootingPoint.rotation = gameObject.transform.rotation;
-        Instantiate(bulletPrefab, shootingPoint.position, shootingPoint.rotation);
-
-        yield return new WaitForSeconds(shootingTime);
-
-        finishedShooting = true;     
-    }
-
-    private void Atk()
+    void Atk()
     {  
         if (Time.time >= nextAtkTime)
         {
@@ -645,76 +514,6 @@ public class MoveFSM : MonoBehaviour
         else if (!IsGrounded() && !isAtking)
         {
             state = State.Glide;
-        }
-    }
-
-    IEnumerator ATK()
-    {
-        isAtking = true;
-
-        animator.Play("Atk");
-
-        Collider2D[] hitEnemies = Physics2D.OverlapCircleAll(atkPoint.position, atkRange, enemyLayer);
-
-        foreach (Collider2D enemy in hitEnemies)
-        {   
-            if(enemy.CompareTag("Enemy"))
-            {
-                enemy.GetComponent<EnemyFSM>().TakeDamage(25);
-            }
-            else if (enemy.CompareTag("EnemyGolem"))
-            {
-                enemy.GetComponent<GolemScript>().TakeDamage(25);
-            }
-            else if (enemy.CompareTag("Boss"))
-            {
-                enemy.GetComponent<Boss>().TakeDamage(25);
-            }
-        }
-
-        yield return new WaitForSeconds(0.3f);
-
-        isAtking = false;
-
-    }
-
-    void OnDrawGizmosSelected()
-    {
-        if (atkPoint == null)
-        {
-            return;
-        }
-
-        Gizmos.DrawWireSphere(atkPoint.position, atkRange);
-
-        Gizmos.DrawWireSphere(groundCheck.position, atkRange);
-    }
-
-    private void OnCollisionEnter2D(Collision2D collision)
-    {
-        if (collision.gameObject.CompareTag("Enemy") || collision.gameObject.CompareTag("EnemyGolem") || collision.gameObject.CompareTag("Projectile"))
-        {
-            damageRB = player.transform.InverseTransformPoint(collision.transform.position);//You can use Transform.InverseTransformPoint to find the enemy's relative position from the perspective of the player.
-                                                                                            //This Vector2 damageRB is a vector that describes the enemy's position offset from the player's position along the player's left/right, up/down, and forward/back axes.
-            ReceiveDamage(1);
-                                                                                           
-        }
-    }
-
-    public void ReceiveDamage(int damage)
-    {
-        if (!imortal)
-        {
-            playerHealth = playerHealth - damage;
-            state = State.TakeDamage;
-        }
-    }
-
-    private void OnCollisionExit2D(Collision2D collision)
-    {
-        if (collision.gameObject.CompareTag("GoThroughPlatform"))
-        {
-            goThroughPlatform = null;
         }
     }
 
@@ -764,48 +563,79 @@ public class MoveFSM : MonoBehaviour
         Invoke(nameof(StopKB), 0.15f);
     }
 
-    IEnumerator VisualDamage()
+    void DoNothing()
     {
-        animator.Play("TakeDamage");
+        rb.velocity = Vector2.zero;
+        animator.Play("DoNothing");
 
-        for ( int i = 0; i < 2; i++ ) 
+        if (!doNothing)
         {
-            //sprite.color = new Color(0.86f, 0.4f, 0.4f, 0.90f); Esse é o vermelho
-
-            sprite.color = new Color(1,1,1, 0.01f);
-
-            //sprite.enabled = true;
-
-            yield return new WaitForSeconds(0.15f);
-
-            sprite.color = normalColor;
-            
-            //sprite.enabled = false;
-
-            yield return new WaitForSeconds(0.15f);
-
-            //sprite.enabled = true;
+            StartCoroutine(DoSomething());
         }
     }
 
-    IEnumerator Imortal()
+    #endregion
+
+    #region Methods
+
+    void Flip()
     {
-        imortal = true;
-        gameObject.layer = LayerMask.NameToLayer("PlayerDashThrough"); //Ailu atravessa inimigos
-        yield return new WaitForSeconds(0.75f);
-        gameObject.layer = LayerMask.NameToLayer("Player"); // Ailu não atravessa inimigos
-        imortal = false;
+        if (isFacingRight && horizontalInput < 0f || !isFacingRight && horizontalInput > 0f)
+        {
+            isFacingRight = !isFacingRight;
+
+            if (isFacingRight)
+            {
+                sprite.flipX = false;
+            }
+            else
+            {
+                sprite.flipX = true;
+            }
+
+            playerEverything.transform.Rotate(0, 180, 0);
+        }
+    }
+
+    public void ReceiveDamage(int damage)
+    {
+        if (!imortal)
+        {
+            playerHealth = playerHealth - damage;
+            state = State.TakeDamage;
+        }
     }
 
     void StopKB()
     {
-        state = State.Glide;   
+        state = State.Glide;
     }
 
     void Die()
     {
-        animator.Play("Death");
-        Destroy(gameObject);
+        playerDied++;
+
+        if(playerDied == 2)
+        {
+            GameOver();
+        }
+        else
+        {
+            animator.Play("Death");
+
+            playerHealth = 3;
+
+            Life1.SetActive(true);
+            Life2.SetActive(true);
+            Life3.SetActive(true);
+            Life2.GetComponent<Image>().color = normalColorLives;
+            Life3.GetComponent<Image>().color = normalColorLives;
+
+            transform.position = playerCheckPoint;
+
+            StartCoroutine(Imortal());
+        }
+
     }
 
     public void AddLeaf()
@@ -865,15 +695,126 @@ public class MoveFSM : MonoBehaviour
         }
     }
 
-    void DoNothing()
+    void GameOver()
     {
-        rb.velocity = Vector2.zero;
-        animator.Play("DoNothing");
+        Debug.Log("GAME OVER!");
+        Destroy(gameObject);
+    }
 
-        if (!doNothing)
+    #endregion
+
+    #region Courotines
+
+    IEnumerator WallJumpDelay()
+    {
+        yield return new WaitForSeconds(wallJumpCooldown);
+        canWallJump = true;
+    }
+
+    IEnumerator DashTempo()
+    {
+        canDash = false;
+        isDashing = true;
+        float originalGravity = rb.gravityScale;
+        rb.gravityScale = 0f;
+        //playerCollider.excludeLayers = 8;
+        gameObject.layer = LayerMask.NameToLayer("PlayerDashThrough"); //Ailu atravessa inimigos
+        rb.velocity = new Vector2(moveDirection.x * dashingPower, 0f);
+        trail.emitting = true;
+
+        yield return new WaitForSeconds(dashingTime);
+
+        trail.emitting = false;
+        rb.gravityScale = originalGravity;
+        gameObject.layer = LayerMask.NameToLayer("Player"); // Ailu não atravessa inimigos 
+        //playerCollider.excludeLayers = 0;
+        isDashing = false;
+        yield return new WaitForSeconds(dashingCooldown);
+        canDash = true;
+    }
+
+    IEnumerator ATK()
+    {
+        isAtking = true;
+
+        animator.Play("Atk");
+
+        Collider2D[] hitEnemies = Physics2D.OverlapCircleAll(atkPoint.position, atkRange, enemyLayer);
+
+        foreach (Collider2D enemy in hitEnemies)
         {
-            StartCoroutine(DoSomething());
+            if (enemy.CompareTag("Enemy"))
+            {
+                enemy.GetComponent<EnemyFSM>().TakeDamage(25);
+            }
+            else if (enemy.CompareTag("EnemyGolem"))
+            {
+                enemy.GetComponent<GolemScript>().TakeDamage(25);
+            }
+            else if (enemy.CompareTag("Boss"))
+            {
+                enemy.GetComponent<Boss>().TakeDamage(25);
+            }
         }
+
+        yield return new WaitForSeconds(0.3f);
+
+        isAtking = false;
+
+    }
+
+    IEnumerator ShootDelay()
+    {
+        animator.Play("Shoot");
+
+        shootingPoint.rotation = gameObject.transform.rotation;
+        Instantiate(bulletPrefab, shootingPoint.position, shootingPoint.rotation);
+
+        yield return new WaitForSeconds(shootingTime);
+
+        finishedShooting = true;
+    }
+
+    IEnumerator DisableCollision()
+    {
+        BoxCollider2D platformCollider = goThroughPlatform.GetComponent<BoxCollider2D>();
+
+        Physics2D.IgnoreCollision(playerCollider, platformCollider, true);
+        yield return new WaitForSeconds(0.25f);
+        Physics2D.IgnoreCollision(playerCollider, platformCollider, false);
+    }
+
+    IEnumerator VisualDamage()
+    {
+        animator.Play("TakeDamage");
+
+        for ( int i = 0; i < 2; i++ ) 
+        {
+            //sprite.color = new Color(0.86f, 0.4f, 0.4f, 0.90f); Esse é o vermelho
+
+            sprite.color = new Color(1,1,1, 0.01f);
+
+            //sprite.enabled = true;
+
+            yield return new WaitForSeconds(0.15f);
+
+            sprite.color = normalColor;
+            
+            //sprite.enabled = false;
+
+            yield return new WaitForSeconds(0.15f);
+
+            //sprite.enabled = true;
+        }
+    }
+
+    IEnumerator Imortal()
+    {
+        imortal = true;
+        gameObject.layer = LayerMask.NameToLayer("PlayerDashThrough"); //Ailu atravessa inimigos
+        yield return new WaitForSeconds(0.75f);
+        gameObject.layer = LayerMask.NameToLayer("Player"); // Ailu não atravessa inimigos
+        imortal = false;
     }
 
     IEnumerator DoSomething()
@@ -881,5 +822,69 @@ public class MoveFSM : MonoBehaviour
         yield return new WaitForSeconds(0.15f);
         state = State.Idle;
     }
+
+    #endregion
+
+    #region Checkers
+
+    public bool IsGrounded()
+    {
+        return Physics2D.OverlapBox(groundCheck.position, new Vector2(0.1f, 0.1f), 0.01f, groundLayer);
+    }
+
+    public bool IsWalled()
+    {
+        return Physics2D.OverlapCircle(wallCheck.position, 0.1f, wallLayer);
+    }
+
+    private void OnCollisionEnter2D(Collision2D collision)
+    {
+        if (collision.gameObject.CompareTag("Enemy") || collision.gameObject.CompareTag("EnemyGolem") || collision.gameObject.CompareTag("Projectile"))
+        {
+            damageRB = player.transform.InverseTransformPoint(collision.transform.position);//You can use Transform.InverseTransformPoint to find the enemy's relative position from the perspective of the player.
+                                                                                            //This Vector2 damageRB is a vector that describes the enemy's position offset from the player's position along the player's left/right, up/down, and forward/back axes.
+            ReceiveDamage(1);
+
+        }
+    }
+
+    private void OnTriggerEnter2D(Collider2D collision)
+    {
+        if (collision.gameObject.CompareTag("CheckPoint"))
+        {
+            Debug.Log("SpawnChanged");
+            playerCheckPoint = collision.transform.position;
+            collision.gameObject.tag = "AlredyChecked";
+        }
+
+        if (collision.gameObject.CompareTag("Collectable"))
+        {
+            Debug.Log("Coletado");
+            collectables++;
+            collision.gameObject.SetActive(false);
+        }
+    }
+
+    private void OnCollisionExit2D(Collision2D collision)
+    {
+        if (collision.gameObject.CompareTag("GoThroughPlatform"))
+        {
+            goThroughPlatform = null;
+        }
+    }
+
+    void OnDrawGizmosSelected()
+    {
+        if (atkPoint == null)
+        {
+            return;
+        }
+
+        Gizmos.DrawWireSphere(atkPoint.position, atkRange);
+
+        Gizmos.DrawWireSphere(groundCheck.position, atkRange);
+    }
+
+    #endregion
 }
 

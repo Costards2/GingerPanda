@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.U2D;
 using UnityEngine.UIElements.Experimental;
@@ -13,6 +14,7 @@ public class GolemScript : MonoBehaviour
     float distanceToPlayer;
     public float chaseDistance = 12f;
     private Transform player;
+    bool playerAbove = false;
 
     private float timer;
     public GameObject projectilePrefab;
@@ -20,9 +22,9 @@ public class GolemScript : MonoBehaviour
     public LayerMask playerLayer;
     public Transform shootCheck;
     bool canShoot = true;
-    bool attacked;
+    bool attacked = false ;
 
-    public int maxHealth = 100;
+    public int maxHealth = 150;
     private int health;
 
     private Animator animator;
@@ -64,7 +66,19 @@ public class GolemScript : MonoBehaviour
 
     void Update()
     {
-        distanceToPlayer = Vector3.Distance(transform.position, player.position);
+        Debug.Log(attacked);
+        
+        timer += Time.deltaTime;
+        distanceToPlayer = Vector2.Distance(transform.position, player.position);
+
+        if (player.position.y > transform.position.y && Mathf.Abs(player.position.x - transform.position.x) < 1f)
+        {
+            playerAbove = true;
+        }
+        else
+        {
+            playerAbove = false;
+        }
 
         switch (currentState)
         {
@@ -84,16 +98,33 @@ public class GolemScript : MonoBehaviour
     {
         animator.Play("Idle");
 
-        if (distanceToPlayer < chaseDistance)
+        if (player.position.x > transform.position.x)
+        {
+            transform.localScale = new Vector3(scale, scale, scale);
+        }
+        else
+        {
+            transform.localScale = new Vector3(-scale, scale, scale);
+        }
+
+       
+        if (distanceToPlayer < chaseDistance && !playerAbove)
         {
             currentState = State.Chase;
+        }
+        else if(playerAbove)
+        {
+            if (timer > 2 && canShoot)
+            {
+                canShoot = false;
+                timer = 0;
+                currentState = State.Attack;
+            }
         }
     }
 
     void ChaseState()
     {
-        timer += Time.deltaTime;
-
         animator.Play("Run");
 
         if (distanceToPlayer < chaseDistance)
@@ -101,15 +132,21 @@ public class GolemScript : MonoBehaviour
             Vector2 directionX = new Vector2(player.position.x - transform.position.x, 0).normalized;
             rb.velocity = new Vector2(directionX.x * chaseSpeed, rb.velocity.y);
 
-            if (player.position.x > transform.position.x)
+            if (playerAbove)
             {
-                transform.localScale = new Vector3(scale, scale, scale);
-            }
-            else
-            {
-                transform.localScale = new Vector3(-scale, scale, scale);
+                currentState = State.Idle;
             }
 
+            float flipBuffer = 0.2f; 
+
+        if (player.position.x > transform.position.x + flipBuffer)
+        {
+            transform.localScale = new Vector3(scale, scale, scale);
+        }
+        else if (player.position.x < transform.position.x - flipBuffer)
+        {
+            transform.localScale = new Vector3(-scale, scale, scale);
+        }
             if (timer > 2 && canShoot)
             {
                 canShoot = false;
@@ -127,15 +164,13 @@ public class GolemScript : MonoBehaviour
     {
         animator.Play("ATK");
 
-        attacked = false;
-
         Shoot();
 
-        if (distanceToPlayer < chaseDistance && attacked)
+        if (distanceToPlayer < chaseDistance && !playerAbove)
         {
             currentState = State.Chase;
         }
-        else if (distanceToPlayer > chaseDistance && attacked)
+        else if (playerAbove)
         {
             currentState = State.Idle;
         }
@@ -143,9 +178,10 @@ public class GolemScript : MonoBehaviour
 
     void Shoot()
     {
-        Instantiate(projectilePrefab, transform.position, Quaternion.identity);
+        Instantiate(projectilePrefab, bulllePos.position, Quaternion.identity);
         canShoot = true;
-        attacked = true;
+        Debug.Log("Shot");
+ 
     }
 
     public void TakeDamage(int damage)
@@ -212,19 +248,9 @@ public class GolemScript : MonoBehaviour
         Destroy(gameObject);
     }
 
-    public bool ShootCheck()
+    public bool ShootIdleCheck()
     {
-        return Physics2D.OverlapBox(shootCheck.position, new Vector2(5, 5), 5, playerLayer);
-    }
-
-    //public bool ChaseCheck()
-    //{
-    //    return Physics2D.OverlapBox(shootCheck.position, new Vector2(3, 3), 3, playerLayer); //I decides this was not necessary anymore, after all I already made a player distance
-    //}
-
-    void OnDrawGizmosSelected()
-    {
-        Gizmos.DrawWireSphere(shootCheck.position, 5);
+        return Physics2D.OverlapBox(shootCheck.position, new Vector2(10, 10), 10, playerLayer);
     }
 
     void OnCollisionEnter2D(Collision2D collision)
