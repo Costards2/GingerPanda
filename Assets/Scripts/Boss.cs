@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using Unity.VisualScripting;
+using UnityEditor.Timeline;
 using UnityEngine;
 using UnityEngine.U2D;
 using UnityEngine.UIElements;
@@ -53,7 +54,7 @@ public class Boss : MonoBehaviour
         if (Input.GetKeyDown(KeyCode.Y)) 
         {
             Debug.Log("VineAtk");
-            AttackState2();
+            currentState = State.Attack2;
         }
     }
 
@@ -66,19 +67,22 @@ public class Boss : MonoBehaviour
 
     void AttackState1()
     {
-        animator.Play("ATK2");
+        animator.Play("ATK1");
 
     }
 
     void AttackState2()
     {
- 
+        float time = Time.deltaTime;
+
         animator.Play("ATK2");
         wichSpawPointOfTheVine = Random.Range(0, vineSpawnPoint.Length);
 
         GameObject newVine = Instantiate(vinePrefab, vineSpawnPoint[wichSpawPointOfTheVine].position, Quaternion.identity);
-
         nextAttackTime = Time.time + attackCooldown;
+
+        currentState = State.Idle;
+
     }
 
     public void TakeDamage(int damage)
