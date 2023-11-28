@@ -1,7 +1,12 @@
 fileFormatVersion: 2
+<<<<<<<< HEAD:Assets/Prefabs/Player/PlayerAnimated 2.prefab.meta
+guid: 16c104a82dba2374c80db630ebdffc43
+PrefabImporter:
+========
 guid: 1e550c774925f6b41bf9442c99a70564
 folderAsset: yes
 DefaultImporter:
+>>>>>>>> main:Assets/Animations/Enemy Golem.meta
   externalObjects: {}
   userData: 
   assetBundleName: 
