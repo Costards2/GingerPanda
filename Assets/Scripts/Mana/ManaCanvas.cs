@@ -13,6 +13,7 @@ public class ManaCanvas : MonoBehaviour
     {
         //manaSystem.GetManaNormalized();
         barImage = transform.Find("Mana").GetComponentInChildren<Image>();
+        manaSystem = FindAnyObjectByType<ManaSystem>();
     }
 
     void Update()

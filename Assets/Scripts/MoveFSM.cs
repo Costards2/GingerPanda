@@ -4,6 +4,7 @@ using Unity.VisualScripting;
 using UnityEditor.Rendering;
 using UnityEngine;
 using UnityEngine.EventSystems;
+using UnityEngine.Rendering;
 using UnityEngine.Rendering.Universal;
 using UnityEngine.UI;
 using static UnityEngine.InputManagerEntry;
@@ -15,18 +16,19 @@ public class MoveFSM : MonoBehaviour
     public float horizontalInput = 0f;
     public bool canMove = true;
     [SerializeField] private float speed = 8f;
+    private Vector2 newVelocity;
     private float jumpingPower = 16f;
     public bool isFacingRight = true;
     Vector2 moveDirection;
     private bool canJump = true;
     public bool doNothing = false;
-  
+
     [Header("Everything related to Wall")]
     private readonly bool isWallSliding;
     private readonly float wallSlidingSpeed = 1f;
     private bool isWallJumping;
     private float wallJumpingDirection;
-    private Vector2 wallJumpingPower = new (16f, 14f);
+    private Vector2 wallJumpingPower = new(16f, 14f);
     public float facing = 0;
     bool canWallJump = true;
     public float wallJumpTime = 0.3f;
@@ -46,7 +48,7 @@ public class MoveFSM : MonoBehaviour
     bool finishedShooting;
 
     [Header("Shoot")]
-    public float shootCost = 20f; 
+    public float shootCost = 20f;
     public GameObject bulletPrefab;
     public Transform shootingPoint;
     readonly float shootingTime = 0.25f;
@@ -83,7 +85,7 @@ public class MoveFSM : MonoBehaviour
     [SerializeField] bool imortal = false;
 
     [Header("Knockback")]
-    private readonly float kbForceX= 14f;
+    private readonly float kbForceX = 14f;
     private readonly float kbForceY = 6f;
     private bool isKb = false;
 
@@ -109,6 +111,22 @@ public class MoveFSM : MonoBehaviour
     [SerializeField] public int collectables = 0;
     [SerializeField] Vector2 vertical;
     [SerializeField] int playerDied;
+    [SerializeField] PhysicsMaterial2D noFriction;
+    [SerializeField] PhysicsMaterial2D friction;
+    private Vector2 colliderSize;
+    [SerializeField]
+    private float slopeCheckDistance;
+    [SerializeField]
+    private float maxSlopeAngle;
+    private float slopeDownAngle;
+    private float slopeSideAngle;
+    private float lastSlopeAngle;
+    private Vector2 slopeNormalPerp;
+    private bool isOnSlope;
+    private float slopeDownAngleOld;
+    private bool canWalkOnSlope;
+    private Vector2 newForce;
+
 
     enum State { Idle, Run, Jump, Glide, Dash, WallSlide, WallJump, Atk, Shoot, TakeDamage, DoNothing }
 
@@ -123,10 +141,20 @@ public class MoveFSM : MonoBehaviour
         normalColor = sprite.color;
         normalColorLives = Life1.GetComponent<Image>().color;
         playerCheckPoint = transform.position;
+        playerCollider = GetComponent<CapsuleCollider2D>();
+
+        colliderSize = playerCollider.size;
     }
 
     private void Update()
     {
+        //SlopeCheck();
+        Debug.Log(IsGrounded());
+        //Debug.Log("On slope: " + isOnSlope);
+        Debug.Log("Walk on Slope: " + canWalkOnSlope);
+
+        //SlopeCheck(); //Colocar nos estados corretos 
+
         jumpInput = Input.GetKey(KeyCode.Space);
         horizontalInput = Input.GetAxisRaw("Horizontal");
         dashInput = Input.GetKey(KeyCode.LeftShift);
@@ -194,7 +222,10 @@ public class MoveFSM : MonoBehaviour
 
     void IdleState()
     {
+
         animator.Play("Idle");
+        SlopeCheck();
+        //rb.velocity = new Vector2(0, 0);
 
         if (canDash && dashInput && horizontalInput != 0)
         {
@@ -232,11 +263,25 @@ public class MoveFSM : MonoBehaviour
 
     void RunState()
     {
+        SlopeCheck();
         animator.Play("Run");
 
+        //rb.velocity = new Vector2(horizontalInput * speed, rb.velocity.y);
+        //newVelocity.Set(speed * horizontalInput, rb.velocity.y);
+        //rb.velocity = newVelocity;
+        SlopeCheck();
         Flip();
 
-        rb.velocity = new Vector2(horizontalInput * speed, rb.velocity.y);
+        if (IsGrounded() && !isOnSlope) 
+        {
+            newVelocity.Set(speed * horizontalInput, 0.0f);
+            rb.velocity = newVelocity;
+        }
+        else if (IsGrounded() && isOnSlope && canWalkOnSlope) 
+        {
+            newVelocity.Set(speed * slopeNormalPerp.x * -horizontalInput, speed * slopeNormalPerp.y * -horizontalInput);
+            rb.velocity = newVelocity;
+        }
 
         if (canDash && dashInput && horizontalInput != 0)
         {
@@ -283,12 +328,16 @@ public class MoveFSM : MonoBehaviour
         animator.Play("Jump");
 
         canJump = false;
-
         Flip();
 
-        rb.velocity = Vector2.up * jumpingPower;
+        //rb.velocity = Vector2.up * jumpingPower;
+        //rb.velocity = rb.velocity.y * Vector2.up + speed * horizontalInput * Vector2.right;
+        newVelocity.Set(0.0f, 0.0f);
+        rb.velocity = newVelocity;
+        newForce.Set(0.0f, jumpingPower);
+        //rb.AddForce(newForce, ForceMode2D.Impulse);
+        rb.velocity = newForce;
 
-        rb.velocity = rb.velocity.y * Vector2.up + speed * horizontalInput * Vector2.right;
 
         if (horizontalInput != 0f && IsGrounded() && rb.velocity.y == 0)
         {
@@ -308,14 +357,16 @@ public class MoveFSM : MonoBehaviour
 
     void GlideState()
     {
+        SlopeCheck();
 
-        if (!isWallJumping) // If necessatio para com que o player consiga completar o WallJump se não ele já entra em queda 
+        if (!isWallJumping && !IsGrounded()) // If necessatio para com que o player consiga completar o WallJump se não ele já entra em queda 
         {
-            rb.velocity = rb.velocity.y * Vector2.up + speed * horizontalInput * Vector2.right;
+            newVelocity.Set(speed * horizontalInput, rb.velocity.y);
+            rb.velocity = newVelocity;
             Flip();
         }
 
-        if (rb.velocity.y < -0.2f)
+        if (rb.velocity.y < -0.5f && !IsGrounded() && !isOnSlope)
         {
             animator.Play("Fall");
         }
@@ -384,7 +435,7 @@ public class MoveFSM : MonoBehaviour
     void WallSlide()
     {
         animator.Play("WallSlide");
-        rb.velocity = new Vector2(0,-0.7f); //Prevent the player from sliding after jumpin to another wall (Me deu vontade ai escrevi fiz em Inglês)
+        rb.velocity = new Vector2(0, -0.7f); //Prevent the player from sliding after jumpin to another wall (Me deu vontade ai escrevi fiz em Inglês)
 
         rb.velocity = new Vector2(rb.velocity.x, Mathf.Clamp(rb.velocity.y, -wallSlidingSpeed, float.MaxValue));
 
@@ -396,6 +447,11 @@ public class MoveFSM : MonoBehaviour
         {
             state = State.WallJump;
         }
+        else if (IsGrounded())
+        {
+            state = State.Idle;
+        }
+
         else if (!IsGrounded() && !IsWalled())
         {
             state = State.Glide;
@@ -460,6 +516,8 @@ public class MoveFSM : MonoBehaviour
 
     void Shoot()
     {
+        SlopeCheck();
+
         if (Time.time >= nextShot)
         {
             finishedShooting = false;
@@ -490,7 +548,9 @@ public class MoveFSM : MonoBehaviour
     }
 
     void Atk()
-    {  
+    {
+        SlopeCheck();
+
         if (Time.time >= nextAtkTime)
         {
 
@@ -565,6 +625,7 @@ public class MoveFSM : MonoBehaviour
 
     void DoNothing()
     {
+        SlopeCheck();
         rb.velocity = Vector2.zero;
         animator.Play("DoNothing");
 
@@ -615,7 +676,7 @@ public class MoveFSM : MonoBehaviour
     {
         playerDied++;
 
-        if(playerDied > 2)
+        if (playerDied > 2)
         {
             GameOver();
         }
@@ -630,7 +691,7 @@ public class MoveFSM : MonoBehaviour
             Life3.SetActive(true);
             Life2.GetComponent<Image>().color = normalColorLives;
             Life3.GetComponent<Image>().color = normalColorLives;
-            
+
             state = State.Idle;
 
             transform.position = playerCheckPoint;
@@ -790,18 +851,18 @@ public class MoveFSM : MonoBehaviour
     {
         animator.Play("TakeDamage");
 
-        for ( int i = 0; i < 2; i++ ) 
+        for (int i = 0; i < 2; i++)
         {
             //sprite.color = new Color(0.86f, 0.4f, 0.4f, 0.90f); Esse é o vermelho
 
-            sprite.color = new Color(1,1,1, 0.01f);
+            sprite.color = new Color(1, 1, 1, 0.01f);
 
             //sprite.enabled = true;
 
             yield return new WaitForSeconds(0.15f);
 
             sprite.color = normalColor;
-            
+
             //sprite.enabled = false;
 
             yield return new WaitForSeconds(0.15f);
@@ -831,12 +892,98 @@ public class MoveFSM : MonoBehaviour
 
     public bool IsGrounded()
     {
-        return Physics2D.OverlapBox(groundCheck.position, new Vector2(0.1f, 0.1f), 0.01f, groundLayer);
+        return Physics2D.OverlapBox(groundCheck.position, new Vector2(0.25f, 0.25f), 0.25f, groundLayer);
     }
 
     public bool IsWalled()
     {
         return Physics2D.OverlapCircle(wallCheck.position, 0.1f, wallLayer);
+    }
+
+    private void SlopeCheck()
+    {
+        Vector2 checkPos = transform.position - (Vector3)(new Vector2(0.0f, colliderSize.y / 4));
+
+        SlopeCheckHorizontal(checkPos);
+        SlopeCheckVertical(checkPos);
+    }
+
+    private void SlopeCheckHorizontal(Vector2 checkPos)
+    {
+        RaycastHit2D slopeHitFront = Physics2D.Raycast(checkPos, transform.right, slopeCheckDistance, groundLayer);
+        RaycastHit2D slopeHitBack = Physics2D.Raycast(checkPos, -transform.right, slopeCheckDistance, groundLayer);
+
+        if (slopeHitFront)
+        {
+            float slopeFrontAngle = Vector2.Angle(slopeHitFront.normal, Vector2.up);
+
+            if (slopeFrontAngle < maxSlopeAngle)
+            {
+                isOnSlope = true;
+
+                slopeSideAngle = Vector2.Angle(slopeHitFront.normal, Vector2.up);
+            }
+
+        }
+        else if (slopeHitBack)
+        {
+            float slopeBackAngle = Vector2.Angle(slopeHitBack.normal, Vector2.up);
+            if (slopeBackAngle < maxSlopeAngle)
+            {
+                isOnSlope = true;
+
+                slopeSideAngle = Vector2.Angle(slopeHitBack.normal, Vector2.up);
+            }
+        }
+        else
+        {
+            slopeSideAngle = 0.0f;
+            isOnSlope = false;
+        }
+
+    }
+
+    private void SlopeCheckVertical(Vector2 checkPos)
+    {
+        RaycastHit2D hit = Physics2D.Raycast(checkPos, Vector2.down, slopeCheckDistance, groundLayer);
+
+        if (hit)
+        {
+            slopeNormalPerp = Vector2.Perpendicular(hit.normal).normalized;
+
+            slopeDownAngle = Vector2.Angle(hit.normal, Vector2.up);
+
+            if (slopeDownAngle != lastSlopeAngle)
+            {
+                isOnSlope = true;
+            }
+
+            lastSlopeAngle = slopeDownAngle;
+
+            Debug.DrawRay(hit.point, hit.normal, Color.green);
+            Debug.DrawRay(hit.point, slopeNormalPerp, Color.red);
+
+            if (slopeDownAngle > maxSlopeAngle || slopeSideAngle > maxSlopeAngle)
+            {
+                canWalkOnSlope = false;
+            }
+            else
+            {
+                canWalkOnSlope = true;
+            }
+
+            if (isOnSlope && canWalkOnSlope && horizontalInput == 0 && !jumpInput)
+            {
+                //Debug.Log("FRICTION");
+                playerCollider.sharedMaterial = friction;
+            }
+            else
+            {
+                //Debug.Log("NO FRICTION");
+                playerCollider.sharedMaterial = noFriction;
+            }
+        }
+
     }
 
     private void OnCollisionEnter2D(Collision2D collision)

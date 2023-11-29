@@ -22,13 +22,13 @@ public class GolemScript : MonoBehaviour
     public LayerMask playerLayer;
     public Transform shootCheck;
     bool canShoot = true;
-    bool attacked = false ;
+    //bool attacked = false ;
 
     public int maxHealth = 150;
     private int health;
 
     private Animator animator;
-    private float damageCooldown = 1f;
+    //private float damageCooldown = 1f;
     private float lastDamageTime;
     private Vector2 knockbackDirection;
     public Rigidbody2D rb;
