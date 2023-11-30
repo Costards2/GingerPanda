@@ -8,7 +8,7 @@ public class DestroyItself : MonoBehaviour
 
     private void Start()
     {
-        Destroy(gameObject, 2.9f);
+        Destroy(gameObject, 3f);
     }
 
     //private void Update()

@@ -14,8 +14,10 @@ public class Boss : MonoBehaviour
     private SpriteRenderer sprite;
     private Color normalColor;
     private Animator animator;
+    public GameObject horizontalVinePrefab;
     public GameObject vinePrefab;
     public Transform[] vineSpawnPoint = new Transform[6];
+    public Transform vineSpawnPointATK1;
     public int wichSpawPointOfTheVine1;
     public int wichSpawPointOfTheVine2;
     public int wichSpawPointOfTheVine3;
@@ -85,8 +87,6 @@ public class Boss : MonoBehaviour
         }
 
         animator.Play("ATK1");
-
-        ChangeToATCK2();
 
         if (animator.GetBool("finishedATK1") == true)
         {
@@ -162,45 +162,11 @@ public class Boss : MonoBehaviour
         GameObject newVine1 = Instantiate(vinePrefab, vineSpawnPoint[wichSpawPointOfTheVine1].position, Quaternion.identity);
     }
 
-    //public IEnumerator ATK1()
-    //{
-    //    animator.Play("ATK1");
+    public void HorizontalVineInstantiate()
+    {
 
-    //    yield return new WaitForSeconds(5f);
-
-    //    currentState = State.Attack2;
-    //}
-
-    //public IEnumerator ATK2()
-    //{
-    //    animator.Play("ATK2");
-
-    //    do
-    //    {
-    //        wichSpawPointOfTheVine1 = UnityEngine.Random.Range(0, vineSpawnPoint.Length);
-    //        wichSpawPointOfTheVine2 = UnityEngine.Random.Range(0, vineSpawnPoint.Length);
-    //        wichSpawPointOfTheVine3 = UnityEngine.Random.Range(0, vineSpawnPoint.Length);
-
-    //    } while
-    //        (wichSpawPointOfTheVine1 == wichSpawPointOfTheVine2 || wichSpawPointOfTheVine1 == wichSpawPointOfTheVine3 || wichSpawPointOfTheVine2 == wichSpawPointOfTheVine3);
-
-    //    if((wichSpawPointOfTheVine1 != wichSpawPointOfTheVine2 || wichSpawPointOfTheVine1 != wichSpawPointOfTheVine3 || wichSpawPointOfTheVine2 != wichSpawPointOfTheVine3))
-    //    {
-    //        GameObject newVine1 = Instantiate(vinePrefab, vineSpawnPoint[wichSpawPointOfTheVine1].position, Quaternion.identity);
-
-    //        yield return new WaitForSeconds(2f);
-
-    //        GameObject newVine2 = Instantiate(vinePrefab, vineSpawnPoint[wichSpawPointOfTheVine2].position, Quaternion.identity);
-
-    //        yield return new WaitForSeconds(2f);
-
-    //        GameObject newVine3 = Instantiate(vinePrefab, vineSpawnPoint[wichSpawPointOfTheVine3].position, Quaternion.identity);
-
-    //        yield return new WaitForSeconds(0.5f);
-
-    //        currentState = State.Idle;
-    //    }
-    //}
+        GameObject newVineHorizontalVine1 = Instantiate(horizontalVinePrefab, vineSpawnPointATK1.position, Quaternion.identity);
+    }
 
     void Die()
     {
