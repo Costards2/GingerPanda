@@ -4,13 +4,18 @@ using UnityEngine;
 
 public class DestroyItself : MonoBehaviour
 {
-    public bool parentAlive = true;
+    //public bool parentAlive = true;
 
-    private void Update()
+    private void Start()
     {
-        if (!parentAlive)
-        {
-            Destroy(gameObject);
-        }
+        Destroy(gameObject, 2.9f);
     }
+
+    //private void Update()
+    //{
+    //    if (!parentAlive)
+    //    {
+    //        Destroy(gameObject);
+    //    }
+    //}
 }

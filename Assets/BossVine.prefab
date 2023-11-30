@@ -31,7 +31,7 @@ Transform:
   m_Children:
   - {fileID: 2568778104982703150}
   m_Father: {fileID: 0}
-  m_RootOrder: 22
+  m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &4836527001641129317
 MonoBehaviour:
@@ -45,7 +45,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 85adf81282a6a334592f36017a186a99, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  parentAlive: 1
 --- !u!1 &5849556832430404714
 GameObject:
   m_ObjectHideFlags: 0
@@ -169,7 +168,7 @@ BoxCollider2D:
     m_Bits: 0
   m_ExcludeLayers:
     serializedVersion: 2
-    m_Bits: 0
+    m_Bits: 4096
   m_LayerOverridePriority: 0
   m_ForceSendLayers:
     serializedVersion: 2
@@ -211,5 +210,3 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e112d9faafafbf6448135543a3b7158b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  parentAlive: 0
-  parent: {fileID: 2448500470771563142}

@@ -190,14 +190,14 @@ Transform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 7829922791036190107}
-  m_LocalRotation: {x: -0, y: -0, z: 0.0014835156, w: 0.9999989}
+  m_LocalRotation: {x: 0, y: 0, z: 0.0014835156, w: 0.9999989}
   m_LocalPosition: {x: 42.5, y: -2.277, z: -1.5}
   m_LocalScale: {x: 0.38115737, y: 0.3811574, z: 0}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 3345596000233305557}
   m_Father: {fileID: 0}
-  m_RootOrder: 25
+  m_RootOrder: 22
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0.17}
 --- !u!212 &2144030925132141286
 SpriteRenderer:
@@ -314,7 +314,7 @@ CapsuleCollider2D:
     m_Bits: 0
   m_ExcludeLayers:
     serializedVersion: 2
-    m_Bits: 0
+    m_Bits: 1024
   m_LayerOverridePriority: 0
   m_ForceSendLayers:
     serializedVersion: 2
@@ -510,7 +510,7 @@ MonoBehaviour:
     m_Bits: 64
   Player:
     serializedVersion: 2
-    m_Bits: 0
+    m_Bits: 2048
   trail: {fileID: 9108278766003401345}
   animator: {fileID: 8648845584679322647}
   playerCollider: {fileID: 4120540030889404693}
@@ -521,6 +521,11 @@ MonoBehaviour:
   collectables: 0
   vertical: {x: 0, y: 0}
   playerDied: 0
+  noFriction: {fileID: 6200000, guid: 0d733a1af33dd5d4396a239614e55192, type: 2}
+  friction: {fileID: 6200000, guid: 38f3518f3ad0c174ea660bc60d757991, type: 2}
+  slopeCheckDistance: 1.1
+  slopeCheckDistanceHorizontal: 0.4
+  maxSlopeAngle: 45
 --- !u!114 &4471617163358254619
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -561,7 +566,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 8576224351049594771}
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0.25999933, y: -3.6099985, z: 0}
+  m_LocalPosition: {x: 0.26, y: -4.02, z: 0}
   m_LocalScale: {x: 3.9353824, y: 3.9353821, z: 0}
   m_ConstrainProportionsScale: 0
   m_Children: []

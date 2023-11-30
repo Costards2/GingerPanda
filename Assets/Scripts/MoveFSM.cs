@@ -117,9 +117,12 @@ public class MoveFSM : MonoBehaviour
     [SerializeField]
     private float slopeCheckDistance;
     [SerializeField]
+    private float slopeCheckDistanceHorizontal;
+    [SerializeField]
     private float maxSlopeAngle;
     private float slopeDownAngle;
-    private float slopeSideAngle;
+    private float slopeSideAngleFront;
+    private float slopeSideAngleBack;
     private float lastSlopeAngle;
     private Vector2 slopeNormalPerp;
     private bool isOnSlope;
@@ -149,9 +152,13 @@ public class MoveFSM : MonoBehaviour
     private void Update()
     {
         //SlopeCheck();
-        Debug.Log(IsGrounded());
-        //Debug.Log("On slope: " + isOnSlope);
-        Debug.Log("Walk on Slope: " + canWalkOnSlope);
+        //Debug.Log(IsGrounded());
+        Debug.Log("On slope: " + isOnSlope);
+        //Debug.Log("Walk on Slope: " + canWalkOnSlope);
+        //Debug.Log(slopeDownAngle);
+        //Debug.Log(slopeSideAngleFront);
+        //Debug.Log(slopeSideAngleBack);
+        //Debug.Log();
 
         //SlopeCheck(); //Colocar nos estados corretos 
 
@@ -225,7 +232,9 @@ public class MoveFSM : MonoBehaviour
 
         animator.Play("Idle");
         SlopeCheck();
-        //rb.velocity = new Vector2(0, 0);
+
+        newVelocity.Set(0, 0);
+        rb.velocity = newVelocity;
 
         if (canDash && dashInput && horizontalInput != 0)
         {
@@ -359,7 +368,7 @@ public class MoveFSM : MonoBehaviour
     {
         SlopeCheck();
 
-        if (!isWallJumping && !IsGrounded()) // If necessatio para com que o player consiga completar o WallJump se não ele já entra em queda 
+        if (!isWallJumping && !IsGrounded() && !isOnSlope) // If necessatio para com que o player consiga completar o WallJump se não ele já entra em queda 
         {
             newVelocity.Set(speed * horizontalInput, rb.velocity.y);
             rb.velocity = newVelocity;
@@ -369,6 +378,16 @@ public class MoveFSM : MonoBehaviour
         if (rb.velocity.y < -0.5f && !IsGrounded() && !isOnSlope)
         {
             animator.Play("Fall");
+        }
+
+        else if (horizontalInput == 0 && isOnSlope && canWalkOnSlope)
+        {
+            animator.Play("Idle");
+        }
+
+        if (IsGrounded() && isOnSlope && horizontalInput != 0)
+        {
+            state = State.Run;
         }
 
         if (canDash && dashInput && horizontalInput != 0)
@@ -910,36 +929,60 @@ public class MoveFSM : MonoBehaviour
 
     private void SlopeCheckHorizontal(Vector2 checkPos)
     {
-        RaycastHit2D slopeHitFront = Physics2D.Raycast(checkPos, transform.right, slopeCheckDistance, groundLayer);
-        RaycastHit2D slopeHitBack = Physics2D.Raycast(checkPos, -transform.right, slopeCheckDistance, groundLayer);
+        RaycastHit2D slopeHitFront = Physics2D.Raycast(checkPos, transform.right, slopeCheckDistanceHorizontal, groundLayer);
+        RaycastHit2D slopeHitBack = Physics2D.Raycast(checkPos, -transform.right, slopeCheckDistanceHorizontal, groundLayer);
 
         if (slopeHitFront)
         {
-            float slopeFrontAngle = Vector2.Angle(slopeHitFront.normal, Vector2.up);
+            isOnSlope = true;
 
-            if (slopeFrontAngle < maxSlopeAngle)
-            {
-                isOnSlope = true;
-
-                slopeSideAngle = Vector2.Angle(slopeHitFront.normal, Vector2.up);
-            }
+            slopeSideAngleFront = Vector2.Angle(slopeHitFront.normal, Vector2.up);
 
         }
         else if (slopeHitBack)
         {
-            float slopeBackAngle = Vector2.Angle(slopeHitBack.normal, Vector2.up);
-            if (slopeBackAngle < maxSlopeAngle)
-            {
-                isOnSlope = true;
+            isOnSlope = true;
 
-                slopeSideAngle = Vector2.Angle(slopeHitBack.normal, Vector2.up);
-            }
+            slopeSideAngleBack = Vector2.Angle(slopeHitBack.normal, Vector2.up);
         }
         else
         {
-            slopeSideAngle = 0.0f;
+            slopeSideAngleFront = 0.0f;
+            slopeSideAngleBack = 0.0f;
             isOnSlope = false;
         }
+
+        //RaycastHit2D slopeHitFront = Physics2D.Raycast(checkPos, transform.right, slopeCheckDistance, groundLayer);
+        //RaycastHit2D slopeHitBack = Physics2D.Raycast(checkPos, -transform.right, slopeCheckDistance, groundLayer);
+
+        //if (slopeHitFront)
+        //{
+        //    float slopeFrontAngle = Vector2.Angle(slopeHitFront.normal, Vector2.up);
+
+        //    if (slopeFrontAngle < maxSlopeAngle)
+        //    {
+        //        isOnSlope = true;
+
+        //        slopeSideAngleFront = Vector2.Angle(slopeHitFront.normal, Vector2.up);
+        //    }
+
+        //}
+        //else if (slopeHitBack)
+        //{
+        //    float slopeBackAngle = Vector2.Angle(slopeHitBack.normal, Vector2.up);
+        //    if (slopeBackAngle < maxSlopeAngle)
+        //    {
+        //        isOnSlope = true;
+
+        //        slopeSideAngleBack = Vector2.Angle(slopeHitBack.normal, Vector2.up);
+        //    }
+        //}
+        //else
+        //{
+        //    slopeSideAngleFront = 0.0f;
+        //    slopeSideAngleBack = 0.0f;;
+        //    isOnSlope = false;
+        //}
 
     }
 
@@ -963,16 +1006,25 @@ public class MoveFSM : MonoBehaviour
             Debug.DrawRay(hit.point, hit.normal, Color.green);
             Debug.DrawRay(hit.point, slopeNormalPerp, Color.red);
 
-            if (slopeDownAngle > maxSlopeAngle || slopeSideAngle > maxSlopeAngle)
-            {
-                canWalkOnSlope = false;
-            }
-            else
+            //if (slopeDownAngle > maxSlopeAngle || slopeSideAngle > maxSlopeAngle)
+            //{
+            //    canWalkOnSlope = false;
+            //}
+            //else
+            //{
+            //    canWalkOnSlope = true;
+            //}
+
+            if (slopeDownAngle < maxSlopeAngle && (slopeSideAngleFront < maxSlopeAngle || slopeSideAngleBack < maxSlopeAngle))
             {
                 canWalkOnSlope = true;
             }
+            else
+            {
+                canWalkOnSlope = false;
+            }
 
-            if (isOnSlope && canWalkOnSlope && horizontalInput == 0 && !jumpInput)
+            if (isOnSlope && canWalkOnSlope && horizontalInput == 0 && !jumpInput && (slopeDownAngle < maxSlopeAngle))
             {
                 //Debug.Log("FRICTION");
                 playerCollider.sharedMaterial = friction;
@@ -989,13 +1041,14 @@ public class MoveFSM : MonoBehaviour
     private void OnCollisionEnter2D(Collision2D collision)
     {
         //Better use layer next time
-        if (collision.gameObject.CompareTag("Enemy") || collision.gameObject.CompareTag("EnemyGolem") || collision.gameObject.CompareTag("Projectile"))
+        if (collision.gameObject.CompareTag("Enemy") || collision.gameObject.CompareTag("EnemyGolem") || collision.gameObject.CompareTag("Projectile") || collision.gameObject.CompareTag("BossVine"))
         {
             damageRB = player.transform.InverseTransformPoint(collision.transform.position);//You can use Transform.InverseTransformPoint to find the enemy's relative position from the perspective of the player.
                                                                                             //This Vector2 damageRB is a vector that describes the enemy's position offset from the player's position along the player's left/right, up/down, and forward/back axes.
             ReceiveDamage(1);
 
         }
+
     }
 
     private void OnTriggerEnter2D(Collider2D collision)
@@ -1012,11 +1065,6 @@ public class MoveFSM : MonoBehaviour
             Debug.Log("Coletado");
             collectables++;
             collision.gameObject.SetActive(false);
-        }
-
-        if (collision.gameObject.CompareTag("BossVine"))
-        {
-            ReceiveDamage(1);
         }
     }
 
