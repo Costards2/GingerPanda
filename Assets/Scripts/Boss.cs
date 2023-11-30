@@ -22,8 +22,6 @@ public class Boss : MonoBehaviour
     public int wichSpawPointOfTheVine2;
     public int wichSpawPointOfTheVine3;
 
-    float idleTime;
-
     private enum State
     {
         Idle,
@@ -67,8 +65,6 @@ public class Boss : MonoBehaviour
         {
            //gameObject.layer = LayerMask.NameToLayer("Enemy");
         }
-
-        idleTime = 0;
 
         animator.Play("Idle");
 

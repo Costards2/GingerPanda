@@ -130,6 +130,8 @@ public class MoveFSM : MonoBehaviour
     private bool canWalkOnSlope;
     private Vector2 newForce;
 
+    bool shouldNotSlope = false; //necessary condition because the Gothrough plataform and Slope were conflicting
+
 
     enum State { Idle, Run, Jump, Glide, Dash, WallSlide, WallJump, Atk, Shoot, TakeDamage, DoNothing }
 
@@ -152,7 +154,7 @@ public class MoveFSM : MonoBehaviour
     private void Update()
     {
         //SlopeCheck();
-        //Debug.Log(IsGrounded());
+        Debug.Log(shouldNotSlope);
         //Debug.Log("On slope: " + isOnSlope);
         //Debug.Log("Walk on Slope: " + canWalkOnSlope);
         //Debug.Log(slopeDownAngle);
@@ -347,12 +349,7 @@ public class MoveFSM : MonoBehaviour
         //rb.AddForce(newForce, ForceMode2D.Impulse);
         rb.velocity = newForce;
 
-
-        if (horizontalInput != 0f && IsGrounded() && rb.velocity.y == 0)
-        {
-            state = State.Run;
-        }
-        else if (canDash && dashInput && horizontalInput != 0)
+        if (canDash && dashInput && horizontalInput != 0)
         {
             state = State.Dash;
         }
@@ -385,7 +382,7 @@ public class MoveFSM : MonoBehaviour
             animator.Play("Idle");
         }
 
-        if (IsGrounded() && isOnSlope && horizontalInput != 0)
+        if (IsGrounded() && horizontalInput != 0 && !shouldNotSlope)
         {
             state = State.Run;
         }
@@ -932,14 +929,14 @@ public class MoveFSM : MonoBehaviour
         RaycastHit2D slopeHitFront = Physics2D.Raycast(checkPos, transform.right, slopeCheckDistanceHorizontal, groundLayer);
         RaycastHit2D slopeHitBack = Physics2D.Raycast(checkPos, -transform.right, slopeCheckDistanceHorizontal, groundLayer);
 
-        if (slopeHitFront)
+        if (slopeHitFront && !shouldNotSlope)
         {
             isOnSlope = true;
 
             slopeSideAngleFront = Vector2.Angle(slopeHitFront.normal, Vector2.up);
 
         }
-        else if (slopeHitBack)
+        else if (slopeHitBack && !shouldNotSlope)
         {
             isOnSlope = true;
 
@@ -1015,7 +1012,7 @@ public class MoveFSM : MonoBehaviour
             //    canWalkOnSlope = true;
             //}
 
-            if (slopeDownAngle < maxSlopeAngle && (slopeSideAngleFront < maxSlopeAngle || slopeSideAngleBack < maxSlopeAngle))
+            if (slopeDownAngle < maxSlopeAngle && (slopeSideAngleFront < maxSlopeAngle || slopeSideAngleBack < maxSlopeAngle) && !shouldNotSlope) 
             {
                 canWalkOnSlope = true;
             }
@@ -1024,7 +1021,7 @@ public class MoveFSM : MonoBehaviour
                 canWalkOnSlope = false;
             }
 
-            if (isOnSlope && canWalkOnSlope && horizontalInput == 0 && !jumpInput && (slopeDownAngle < maxSlopeAngle))
+            if (isOnSlope && canWalkOnSlope && horizontalInput == 0 && !jumpInput && (slopeDownAngle < maxSlopeAngle) && !shouldNotSlope)
             {
                 //Debug.Log("FRICTION");
                 playerCollider.sharedMaterial = friction;
@@ -1047,6 +1044,19 @@ public class MoveFSM : MonoBehaviour
                                                                                             //This Vector2 damageRB is a vector that describes the enemy's position offset from the player's position along the player's left/right, up/down, and forward/back axes.
             ReceiveDamage(1);
 
+        }
+
+        if (collision.gameObject.CompareTag("GoThroughPlatform") && state == State.Glide)
+        {
+            shouldNotSlope = true;
+        }
+    }
+
+    private void OnCollisionStay2D(Collision2D collision)
+    {
+        if (collision.gameObject.CompareTag("GoThroughPlatform") && state != State.Glide)
+        {
+            shouldNotSlope = false;
         }
 
     }
@@ -1073,6 +1083,7 @@ public class MoveFSM : MonoBehaviour
         if (collision.gameObject.CompareTag("GoThroughPlatform"))
         {
             goThroughPlatform = null;
+            shouldNotSlope = false;
         }
     }
 
