@@ -18,10 +18,11 @@ public class DialogueNPC : MonoBehaviour
 
     [Header("UI")]
     public GameObject dialoguePanel;
+    public GameObject basicInterface;
     public TextMeshProUGUI dialogueText;
     public TextMeshProUGUI nameNpc;
     public Image imageNpc;
-    public GameObject exclamationMark;
+    //public GameObject exclamationMark;
 
     [Header("Bools")]
     public bool readyToTalk;
@@ -69,7 +70,9 @@ public class DialogueNPC : MonoBehaviour
         nameNpc.text = "" + nameNpcWrite;
         dialogueIndex = 0;
         dialoguePanel.SetActive(true);
-        exclamationMark.SetActive(false);
+        basicInterface.SetActive(false);
+        //imageNpc.enabled = true;
+        //exclamationMark.SetActive(false);
         StartCoroutine(ShowDialogue());
     }
 
@@ -87,6 +90,7 @@ public class DialogueNPC : MonoBehaviour
     {
         readyToTalk = false;
         dialoguePanel.SetActive(false);
+        basicInterface.SetActive(true);
         startDialogue = false;
         dialogueIndex = 0;
         FindObjectOfType<MoveFSM>().doNothing = false;
@@ -118,7 +122,7 @@ public class DialogueNPC : MonoBehaviour
         if (!startDialogue && (FindObjectOfType<MoveFSM>().IsGrounded() == true) && readyToTalk && !dontTalkAgaing)
         {
             FindObjectOfType<MoveFSM>().doNothing = true;
-            firstTalk = false;
+            //firstTalk = false;
             StartDialogue();
         }
     }
@@ -127,7 +131,7 @@ public class DialogueNPC : MonoBehaviour
     {
         if (collision.CompareTag("Player"))
         {
-            dontTalkAgaing = true;
+            //dontTalkAgaing = true;
         }
     }
 }

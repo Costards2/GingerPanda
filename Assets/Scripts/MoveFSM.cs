@@ -377,7 +377,7 @@ public class MoveFSM : MonoBehaviour
             animator.Play("Fall");
         }
 
-        else if (horizontalInput == 0 && isOnSlope && canWalkOnSlope)
+        else if (horizontalInput == 0 && isOnSlope && canWalkOnSlope && IsGrounded())
         {
             animator.Play("Idle");
         }
