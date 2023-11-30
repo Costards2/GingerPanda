@@ -10,6 +10,10 @@ TagManager:
   - Boss
   - EnemyGolem
   - Projectile
+  - CheckPoint
+  - AlredyChecked
+  - Collectable
+  - BossVine
   layers:
   - Default
   - TransparentFX
@@ -25,7 +29,7 @@ TagManager:
   - Player
   - PlayerDashThrough
   - EnemyProjectile
-  - 
+  - BossVines
   - 
   - 
   - 
