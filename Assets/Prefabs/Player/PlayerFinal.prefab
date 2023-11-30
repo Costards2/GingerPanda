@@ -197,7 +197,7 @@ Transform:
   m_Children:
   - {fileID: 3345596000233305557}
   m_Father: {fileID: 0}
-  m_RootOrder: 22
+  m_RootOrder: 18
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0.17}
 --- !u!212 &2144030925132141286
 SpriteRenderer:
@@ -524,7 +524,7 @@ MonoBehaviour:
   noFriction: {fileID: 6200000, guid: 0d733a1af33dd5d4396a239614e55192, type: 2}
   friction: {fileID: 6200000, guid: 38f3518f3ad0c174ea660bc60d757991, type: 2}
   slopeCheckDistance: 1.1
-  slopeCheckDistanceHorizontal: 0.4
+  slopeCheckDistanceHorizontal: 1.1
   maxSlopeAngle: 45
 --- !u!114 &4471617163358254619
 MonoBehaviour:

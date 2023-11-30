@@ -2939,10 +2939,6 @@ PrefabInstance:
       propertyPath: Life3
       value: 
       objectReference: {fileID: 1977501212}
-    - target: {fileID: 6711039420039234006, guid: b1cb5e6b9844f0c40a582b58d9f060b8, type: 3}
-      propertyPath: slopeCheckDistanceHorizontal
-      value: 1.1
-      objectReference: {fileID: 0}
     - target: {fileID: 7829922791036190107, guid: b1cb5e6b9844f0c40a582b58d9f060b8, type: 3}
       propertyPath: m_Name
       value: PlayerFinal
