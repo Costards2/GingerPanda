@@ -153,7 +153,7 @@ public class MoveFSM : MonoBehaviour
     {
         //SlopeCheck();
         //Debug.Log(IsGrounded());
-        Debug.Log("On slope: " + isOnSlope);
+        //Debug.Log("On slope: " + isOnSlope);
         //Debug.Log("Walk on Slope: " + canWalkOnSlope);
         //Debug.Log(slopeDownAngle);
         //Debug.Log(slopeSideAngleFront);
@@ -825,7 +825,7 @@ public class MoveFSM : MonoBehaviour
 
         foreach (Collider2D enemy in hitEnemies)
         {
-            if (enemy.CompareTag("Enemy"))
+            if (enemy.gameObject.layer == LayerMask.NameToLayer("Enemy"))
             {
                 enemy.GetComponent<EnemyFSM>().TakeDamage(25);
             }
