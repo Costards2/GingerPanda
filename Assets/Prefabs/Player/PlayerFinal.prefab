@@ -9,7 +9,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 7573918173617452290}
-  m_Layer: 10
+  m_Layer: 11
   m_Name: AtkPoint
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -24,7 +24,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2104525846231783496}
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 4, y: -0.8000001, z: 0}
+  m_LocalPosition: {x: 3.3, y: -0.8, z: 0}
   m_LocalScale: {x: 3.9353824, y: 3.9353821, z: 0}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -197,7 +197,7 @@ Transform:
   m_Children:
   - {fileID: 3345596000233305557}
   m_Father: {fileID: 0}
-  m_RootOrder: 18
+  m_RootOrder: 20
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0.17}
 --- !u!212 &2144030925132141286
 SpriteRenderer:

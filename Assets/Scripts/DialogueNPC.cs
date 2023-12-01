@@ -122,7 +122,7 @@ public class DialogueNPC : MonoBehaviour
         if (!startDialogue && (FindObjectOfType<MoveFSM>().IsGrounded() == true) && readyToTalk && !dontTalkAgaing)
         {
             FindObjectOfType<MoveFSM>().doNothing = true;
-            //firstTalk = false;
+            firstTalk = false;
             StartDialogue();
         }
     }
@@ -131,7 +131,7 @@ public class DialogueNPC : MonoBehaviour
     {
         if (collision.CompareTag("Player"))
         {
-            //dontTalkAgaing = true;
+            dontTalkAgaing = true;
         }
     }
 }

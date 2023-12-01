@@ -81,7 +81,7 @@ public class MoveFSM : MonoBehaviour
     public GameObject Leaf2;
     public GameObject Leaf3;
     public bool leafInput;
-    private int leafs = 0;
+    [SerializeField] private int leafs = 0;
     [SerializeField] bool imortal = false;
 
     [Header("Knockback")]
@@ -107,7 +107,7 @@ public class MoveFSM : MonoBehaviour
     [SerializeField] private GameObject goThroughPlatform;
     [SerializeField] public ManaSystem manaSystem;
     [SerializeField] Vector2 damageRB;
-    [SerializeField] Vector2 playerCheckPoint;
+    [SerializeField] Vector3 playerCheckPoint;
     [SerializeField] public int collectables = 0;
     [SerializeField] Vector2 vertical;
     [SerializeField] int playerDied;
@@ -154,7 +154,7 @@ public class MoveFSM : MonoBehaviour
     private void Update()
     {
         //SlopeCheck();
-        Debug.Log(shouldNotSlope);
+        Debug.Log(playerCheckPoint);
         //Debug.Log("On slope: " + isOnSlope);
         //Debug.Log("Walk on Slope: " + canWalkOnSlope);
         //Debug.Log(slopeDownAngle);
@@ -688,7 +688,7 @@ public class MoveFSM : MonoBehaviour
         state = State.Glide;
     }
 
-    void Die()
+    public void Die()
     {
         playerDied++;
 
@@ -710,7 +710,7 @@ public class MoveFSM : MonoBehaviour
 
             state = State.Idle;
 
-            transform.position = playerCheckPoint;
+            this.transform.position = playerCheckPoint;
 
             StartCoroutine(Imortal());
         }
@@ -822,9 +822,11 @@ public class MoveFSM : MonoBehaviour
 
         foreach (Collider2D enemy in hitEnemies)
         {
-            if (enemy.gameObject.layer == LayerMask.NameToLayer("Enemy"))
+
+            if (enemy.CompareTag("EnemyFire"))
             {
                 enemy.GetComponent<EnemyFSM>().TakeDamage(25);
+                Debug.Log("EnemyHit");
             }
             else if (enemy.CompareTag("EnemyGolem"))
             {
@@ -1038,7 +1040,7 @@ public class MoveFSM : MonoBehaviour
     private void OnCollisionEnter2D(Collision2D collision)
     {
         //Better use layer next time
-        if (collision.gameObject.CompareTag("Enemy") || collision.gameObject.CompareTag("EnemyGolem") || collision.gameObject.CompareTag("Projectile") || collision.gameObject.CompareTag("BossVine"))
+        if (collision.gameObject.CompareTag("EnemyFire") || collision.gameObject.CompareTag("EnemyGolem") || collision.gameObject.CompareTag("Projectile") || collision.gameObject.CompareTag("BossVine"))
         {
             damageRB = player.transform.InverseTransformPoint(collision.transform.position);//You can use Transform.InverseTransformPoint to find the enemy's relative position from the perspective of the player.
                                                                                             //This Vector2 damageRB is a vector that describes the enemy's position offset from the player's position along the player's left/right, up/down, and forward/back axes.
@@ -1066,7 +1068,9 @@ public class MoveFSM : MonoBehaviour
         if (collision.gameObject.CompareTag("CheckPoint"))
         {
             Debug.Log("SpawnChanged");
-            playerCheckPoint = collision.transform.position;
+            //Vector3 checkpoint = new Vector3();
+            //checkpoint = collision.transform.position;
+            playerCheckPoint = new Vector3( collision.transform.position.x ,collision.transform.position.y, -5);
             collision.gameObject.tag = "AlredyChecked";
         }
 
