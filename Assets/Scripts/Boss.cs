@@ -6,10 +6,11 @@ using UnityEditor.Timeline;
 using UnityEngine;
 using UnityEngine.U2D;
 using UnityEngine.UIElements;
+using static UnityEngine.ParticleSystem;
 
 public class Boss : MonoBehaviour
 {
-    public int maxHealth = 100;
+    public int maxHealth = 1500;
     int currentHealth;
     private SpriteRenderer sprite;
     private Color normalColor;
@@ -21,6 +22,8 @@ public class Boss : MonoBehaviour
     public int wichSpawPointOfTheVine1;
     public int wichSpawPointOfTheVine2;
     public int wichSpawPointOfTheVine3;
+    public CircleCollider2D bossCircleCollider;
+    public GameObject colliderDano;
 
     private enum State
     {
@@ -31,6 +34,8 @@ public class Boss : MonoBehaviour
 
     private State currentState;
 
+    //When dealing with the boss DO NOT FORGET that you made may things in the animation, Changing the position, scale, etc. So if you place the boss in another Scene there will be some problems.
+
     void Start()
     {
         currentHealth = maxHealth;
@@ -38,6 +43,7 @@ public class Boss : MonoBehaviour
         normalColor = sprite.color;
         animator = GetComponent<Animator>();
         currentState = State.Idle;
+        bossCircleCollider = GetComponent<CircleCollider2D>();
     }
 
     void Update()
@@ -61,10 +67,10 @@ public class Boss : MonoBehaviour
 
     void IdleState()
     {
-        if (gameObject.layer != LayerMask.NameToLayer("Enemy"))
-        {
-           //gameObject.layer = LayerMask.NameToLayer("Enemy");
-        }
+        //if (gameObject.layer != LayerMask.NameToLayer("Enemy"))
+        //{
+        //   //gameObject.layer = LayerMask.NameToLayer("Enemy");
+        //}
 
         animator.Play("Idle");
 
@@ -77,10 +83,10 @@ public class Boss : MonoBehaviour
 
     void AttackState1()
     {
-        if (gameObject.layer != LayerMask.NameToLayer("BossInvunarable"))
-        {
-            //gameObject.layer = LayerMask.NameToLayer("BossInvunarable");
-        }
+        //if (gameObject.layer != LayerMask.NameToLayer("BossInvunarable"))
+        //{
+        //    //gameObject.layer = LayerMask.NameToLayer("BossInvunarable");
+        //}
 
         animator.Play("ATK1");
 
@@ -94,10 +100,10 @@ public class Boss : MonoBehaviour
 
     void AttackState2()
     {
-        if (gameObject.layer != LayerMask.NameToLayer("BossInvunarable"))
-        {
-           //gameObject.layer = LayerMask.NameToLayer("BossInvunarable");
-        }
+        //if (gameObject.layer != LayerMask.NameToLayer("BossInvunarable"))
+        //{
+        //   //gameObject.layer = LayerMask.NameToLayer("BossInvunarable");
+        //}
 
         animator.Play("ATK2");
 
@@ -120,7 +126,20 @@ public class Boss : MonoBehaviour
 
     public void ChangeToIdle()
     {
+
         animator.SetBool("finishedATK2", true);
+    }
+
+    public void EnableBossDamage()
+    {
+        colliderDano.SetActive(false);
+        bossCircleCollider.enabled = true;
+    }
+
+    public void DesanableBossDamage()
+    {
+        colliderDano.SetActive(true);
+        bossCircleCollider.enabled = false;
     }
 
     public void TakeDamage(int damage)

@@ -181,13 +181,14 @@ Transform:
   m_GameObject: {fileID: 1457517670078221841}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 73.3, y: 0.03, z: -1}
-  m_LocalScale: {x: 0.53633595, y: 0.53633595, z: 0.53633595}
+  m_LocalScale: {x: 0.53633595, y: 0.53633595, z: 0}
   m_ConstrainProportionsScale: 1
   m_Children:
+  - {fileID: 6825088929888139458}
   - {fileID: 3658436722326754547}
   - {fileID: 7704930014156390162}
   m_Father: {fileID: 0}
-  m_RootOrder: 25
+  m_RootOrder: -1
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!212 &9073062577418388304
 SpriteRenderer:
@@ -309,7 +310,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7e60e2ae2b560de4fb80ad3571489140, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  maxHealth: 100
+  maxHealth: 1500
   horizontalVinePrefab: {fileID: 2137000169152156466, guid: f968614a41e0a4c429ca7ddaa4043d7d, type: 3}
   vinePrefab: {fileID: 2448500470771563142, guid: b018adeebc8450b4eac46e31668be210, type: 3}
   vineSpawnPoint:
@@ -323,6 +324,8 @@ MonoBehaviour:
   wichSpawPointOfTheVine1: 0
   wichSpawPointOfTheVine2: 0
   wichSpawPointOfTheVine3: 0
+  bossCircleCollider: {fileID: 8460050901073711133}
+  colliderDano: {fileID: 5420834092548511958}
 --- !u!1 &2361726516386045214
 GameObject:
   m_ObjectHideFlags: 0
@@ -575,6 +578,83 @@ SpriteRenderer:
   m_WasSpriteAssigned: 1
   m_MaskInteraction: 0
   m_SpriteSortPoint: 0
+--- !u!1 &5420834092548511958
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 6825088929888139458}
+  - component: {fileID: 1447124247782073706}
+  m_Layer: 8
+  m_Name: Collider Dano
+  m_TagString: Enemy
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &6825088929888139458
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5420834092548511958}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 21.308, y: 21.308, z: 21}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 5988066676304598130}
+  m_RootOrder: -1
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!61 &1447124247782073706
+BoxCollider2D:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5420834092548511958}
+  m_Enabled: 1
+  m_Density: 1
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_ForceSendLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_ForceReceiveLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_ContactCaptureLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_CallbackLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_IsTrigger: 0
+  m_UsedByEffector: 0
+  m_UsedByComposite: 0
+  m_Offset: {x: 0.033988178, y: -0.029132798}
+  m_SpriteTilingProperty:
+    border: {x: 0, y: 0, z: 0, w: 0}
+    pivot: {x: 0, y: 0}
+    oldSize: {x: 0, y: 0}
+    newSize: {x: 0, y: 0}
+    adaptiveTilingThreshold: 0
+    drawMode: 0
+    adaptiveTiling: 0
+  m_AutoTiling: 0
+  serializedVersion: 2
+  m_Size: {x: 0.8057817, y: 0.7583003}
+  m_EdgeRadius: 0
 --- !u!1 &6229665030237670117
 GameObject:
   m_ObjectHideFlags: 0

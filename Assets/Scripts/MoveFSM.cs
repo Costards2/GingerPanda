@@ -154,7 +154,7 @@ public class MoveFSM : MonoBehaviour
     private void Update()
     {
         //SlopeCheck();
-        Debug.Log(playerCheckPoint);
+        //Debug.Log(shouldNotSlope);
         //Debug.Log("On slope: " + isOnSlope);
         //Debug.Log("Walk on Slope: " + canWalkOnSlope);
         //Debug.Log(slopeDownAngle);
@@ -403,11 +403,11 @@ public class MoveFSM : MonoBehaviour
 
         if (IsGrounded())
         {
-            if (horizontalInput != 0f && rb.velocity.y == 0)
+            if (horizontalInput != 0f && !shouldNotSlope)
             {
                 state = State.Run;
             }
-            else if (horizontalInput == 0f && rb.velocity.y == 0 && rb.velocity.x == 0)
+            else if (horizontalInput == 0f && rb.velocity.x == 0 && !shouldNotSlope)
             {
                 state = State.Idle;
             }
@@ -995,7 +995,7 @@ public class MoveFSM : MonoBehaviour
 
             slopeDownAngle = Vector2.Angle(hit.normal, Vector2.up);
 
-            if (slopeDownAngle != lastSlopeAngle)
+            if (slopeDownAngle != lastSlopeAngle && !shouldNotSlope)
             {
                 isOnSlope = true;
             }
@@ -1040,7 +1040,7 @@ public class MoveFSM : MonoBehaviour
     private void OnCollisionEnter2D(Collision2D collision)
     {
         //Better use layer next time
-        if (collision.gameObject.CompareTag("EnemyFire") || collision.gameObject.CompareTag("EnemyGolem") || collision.gameObject.CompareTag("Projectile") || collision.gameObject.CompareTag("BossVine"))
+        if (collision.gameObject.CompareTag("Enemy") || collision.gameObject.CompareTag("EnemyFire") || collision.gameObject.CompareTag("EnemyGolem") || collision.gameObject.CompareTag("Projectile") || collision.gameObject.CompareTag("BossVine"))
         {
             damageRB = player.transform.InverseTransformPoint(collision.transform.position);//You can use Transform.InverseTransformPoint to find the enemy's relative position from the perspective of the player.
                                                                                             //This Vector2 damageRB is a vector that describes the enemy's position offset from the player's position along the player's left/right, up/down, and forward/back axes.
@@ -1048,7 +1048,7 @@ public class MoveFSM : MonoBehaviour
 
         }
 
-        if (collision.gameObject.CompareTag("GoThroughPlatform") && state == State.Glide)
+        if (collision.gameObject.CompareTag("GoThroughPlatform"))
         {
             shouldNotSlope = true;
         }
@@ -1056,7 +1056,11 @@ public class MoveFSM : MonoBehaviour
 
     private void OnCollisionStay2D(Collision2D collision)
     {
-        if (collision.gameObject.CompareTag("GoThroughPlatform") && state != State.Glide)
+        if (collision.gameObject.CompareTag("GoThroughPlatform") && rb.velocity.y > 0 )
+        {
+            shouldNotSlope = true;
+        }
+        else
         {
             shouldNotSlope = false;
         }

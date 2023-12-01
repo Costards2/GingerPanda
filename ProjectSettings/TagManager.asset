@@ -15,6 +15,7 @@ TagManager:
   - BossVine
   - Enemy
   - EnemyFire
+  - BossDanoCollider
   layers:
   - Default
   - TransparentFX
