@@ -777,6 +777,7 @@ public class MoveFSM : MonoBehaviour
     void GameOver()
     {
         Debug.Log("GAME OVER!");
+
         Destroy(gameObject);
     }
 
