@@ -1,7 +1,5 @@
 using System.Collections;
 using System.Collections.Generic;
-using Unity.PlasticSCM.Editor.WebApi;
-using UnityEditor.Tilemaps;
 using UnityEngine;
 using UnityEngine.U2D;
 using UnityEngine.UIElements.Experimental;

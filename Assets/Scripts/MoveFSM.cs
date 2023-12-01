@@ -7,7 +7,6 @@ using UnityEngine.EventSystems;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.Universal;
 using UnityEngine.UI;
-using static UnityEngine.InputManagerEntry;
 using static UnityEngine.UIElements.UxmlAttributeDescription;
 
 public class MoveFSM : MonoBehaviour
