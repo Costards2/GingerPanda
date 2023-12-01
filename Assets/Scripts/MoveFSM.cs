@@ -130,8 +130,7 @@ public class MoveFSM : MonoBehaviour
     private bool canWalkOnSlope;
     private Vector2 newForce;
 
-    bool shouldNotSlope = false; //necessary condition because the Gothrough plataform and Slope were conflicting
-
+    //bool shouldNotSlope = false; //necessary condition because the Gothrough plataform and Slope were conflicting //I have to chnge It 
 
     enum State { Idle, Run, Jump, Glide, Dash, WallSlide, WallJump, Atk, Shoot, TakeDamage, DoNothing }
 
@@ -154,6 +153,7 @@ public class MoveFSM : MonoBehaviour
     private void Update()
     {
         //SlopeCheck();
+        //Debug.Log(state);
         //Debug.Log(shouldNotSlope);
         //Debug.Log("On slope: " + isOnSlope);
         //Debug.Log("Walk on Slope: " + canWalkOnSlope);
@@ -382,7 +382,7 @@ public class MoveFSM : MonoBehaviour
             animator.Play("Idle");
         }
 
-        if (IsGrounded() && horizontalInput != 0 && !shouldNotSlope)
+        if (IsGrounded() && horizontalInput != 0)
         {
             state = State.Run;
         }
@@ -403,11 +403,11 @@ public class MoveFSM : MonoBehaviour
 
         if (IsGrounded())
         {
-            if (horizontalInput != 0f && !shouldNotSlope)
+            if (horizontalInput != 0f && (rb.velocity.y == 0 || isOnSlope && canWalkOnSlope))
             {
                 state = State.Run;
             }
-            else if (horizontalInput == 0f && rb.velocity.x == 0 && !shouldNotSlope)
+            else if (horizontalInput == 0f && rb.velocity.x == 0 && (rb.velocity.y == 0 || isOnSlope && canWalkOnSlope))
             {
                 state = State.Idle;
             }
@@ -545,11 +545,11 @@ public class MoveFSM : MonoBehaviour
             nextShot = Time.time + 1f / ShootingRate;
         }
 
-        else if (horizontalInput == 0f && rb.velocity.y == 0 && rb.velocity.x == 0 && finishedShooting)
+        else if (horizontalInput == 0f && rb.velocity.x == 0 && finishedShooting && IsGrounded()  && ((canWalkOnSlope && isOnSlope) || !isOnSlope) && rb.velocity.y == 0)
         {
             state = State.Idle;
         }
-        else if (horizontalInput != 0f && rb.velocity.y == 0 && finishedShooting)
+        else if (horizontalInput != 0f && finishedShooting && IsGrounded() && ((canWalkOnSlope && isOnSlope) || !isOnSlope) && rb.velocity.y == 0)
         {
             state = State.Run;
         }
@@ -575,11 +575,11 @@ public class MoveFSM : MonoBehaviour
             nextAtkTime = Time.time + 1f / atkRate;
         }
 
-        else if (horizontalInput == 0f && !isAtking && rb.velocity.y == 0 && rb.velocity.x == 0)
+        else if (horizontalInput == 0f && rb.velocity.x == 0 && finishedShooting && IsGrounded() && ((canWalkOnSlope && isOnSlope) || !isOnSlope) && rb.velocity.y == 0)
         {
             state = State.Idle;
         }
-        else if (horizontalInput != 0f && !isAtking && rb.velocity.y == 0)
+        else if (horizontalInput != 0f && finishedShooting && IsGrounded() && ((canWalkOnSlope && isOnSlope) || !isOnSlope) && rb.velocity.y == 0)
         {
             state = State.Run;
         }
@@ -931,14 +931,14 @@ public class MoveFSM : MonoBehaviour
         RaycastHit2D slopeHitFront = Physics2D.Raycast(checkPos, transform.right, slopeCheckDistanceHorizontal, groundLayer);
         RaycastHit2D slopeHitBack = Physics2D.Raycast(checkPos, -transform.right, slopeCheckDistanceHorizontal, groundLayer);
 
-        if (slopeHitFront && !shouldNotSlope)
+        if (slopeHitFront)
         {
             isOnSlope = true;
 
             slopeSideAngleFront = Vector2.Angle(slopeHitFront.normal, Vector2.up);
 
         }
-        else if (slopeHitBack && !shouldNotSlope)
+        else if (slopeHitBack)
         {
             isOnSlope = true;
 
@@ -995,7 +995,7 @@ public class MoveFSM : MonoBehaviour
 
             slopeDownAngle = Vector2.Angle(hit.normal, Vector2.up);
 
-            if (slopeDownAngle != lastSlopeAngle && !shouldNotSlope)
+            if (slopeDownAngle != lastSlopeAngle)
             {
                 isOnSlope = true;
             }
@@ -1014,7 +1014,7 @@ public class MoveFSM : MonoBehaviour
             //    canWalkOnSlope = true;
             //}
 
-            if (slopeDownAngle < maxSlopeAngle && (slopeSideAngleFront < maxSlopeAngle || slopeSideAngleBack < maxSlopeAngle) && !shouldNotSlope) 
+            if (slopeDownAngle < maxSlopeAngle && (slopeSideAngleFront < maxSlopeAngle || slopeSideAngleBack < maxSlopeAngle)) 
             {
                 canWalkOnSlope = true;
             }
@@ -1023,7 +1023,7 @@ public class MoveFSM : MonoBehaviour
                 canWalkOnSlope = false;
             }
 
-            if (isOnSlope && canWalkOnSlope && horizontalInput == 0 && !jumpInput && (slopeDownAngle < maxSlopeAngle) && !shouldNotSlope)
+            if (isOnSlope && canWalkOnSlope && horizontalInput == 0 && !jumpInput && (slopeDownAngle < maxSlopeAngle))
             {
                 //Debug.Log("FRICTION");
                 playerCollider.sharedMaterial = friction;
@@ -1048,22 +1048,22 @@ public class MoveFSM : MonoBehaviour
 
         }
 
-        if (collision.gameObject.CompareTag("GoThroughPlatform"))
-        {
-            shouldNotSlope = true;
-        }
+        //if (collision.gameObject.CompareTag("GoThroughPlatform"))
+        //{
+        //    shouldNotSlope = true;
+        //}
     }
 
     private void OnCollisionStay2D(Collision2D collision)
     {
-        if (collision.gameObject.CompareTag("GoThroughPlatform") && rb.velocity.y > 0 )
-        {
-            shouldNotSlope = true;
-        }
-        else
-        {
-            shouldNotSlope = false;
-        }
+        //if (collision.gameObject.CompareTag("GoThroughPlatform"))
+        //{
+        //    //shouldNotSlope = true;
+        //}
+        //else
+        //{
+        //    //shouldNotSlope = false;
+        //}
 
     }
 
@@ -1088,11 +1088,11 @@ public class MoveFSM : MonoBehaviour
 
     private void OnCollisionExit2D(Collision2D collision)
     {
-        if (collision.gameObject.CompareTag("GoThroughPlatform"))
-        {
-            goThroughPlatform = null;
-            shouldNotSlope = false;
-        }
+        //if (collision.gameObject.CompareTag("GoThroughPlatform"))
+        //{
+        //    goThroughPlatform = null;
+        //    shouldNotSlope = false;
+        //}
     }
 
     void OnDrawGizmosSelected()

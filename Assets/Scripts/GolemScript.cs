@@ -14,6 +14,8 @@ public class GolemScript : MonoBehaviour
     float distanceToPlayer;
     public float chaseDistance = 12f;
     private Transform player;
+    public Transform groundCheck;
+    public LayerMask groundLayer;
     bool playerAbove = false;
 
     private float timer;
@@ -66,7 +68,16 @@ public class GolemScript : MonoBehaviour
 
     void Update()
     {
-        //Debug.Log(attacked);
+        Debug.Log(IsGrounded());
+
+        if(IsGrounded())
+        {
+            chaseSpeed = normalChaseSpeed;
+        }
+        else
+        {
+            chaseSpeed = 0;
+        }
         
         timer += Time.deltaTime;
         distanceToPlayer = Vector2.Distance(transform.position, player.position);
@@ -108,11 +119,11 @@ public class GolemScript : MonoBehaviour
         }
 
        
-        if (distanceToPlayer < chaseDistance && !playerAbove)
+        if (distanceToPlayer < chaseDistance && !playerAbove && IsGrounded())
         {
             currentState = State.Chase;
         }
-        else if(playerAbove)
+        else if(playerAbove || !IsGrounded())
         {
             if (timer > 2 && canShoot)
             {
@@ -127,7 +138,7 @@ public class GolemScript : MonoBehaviour
     {
         animator.Play("Run");
 
-        if (distanceToPlayer < chaseDistance)
+        if (distanceToPlayer < chaseDistance && IsGrounded())
         {
             Vector2 directionX = new Vector2(player.position.x - transform.position.x, 0).normalized;
             rb.velocity = new Vector2(directionX.x * chaseSpeed, rb.velocity.y);
@@ -166,11 +177,11 @@ public class GolemScript : MonoBehaviour
 
         Shoot();
 
-        if (distanceToPlayer < chaseDistance && !playerAbove)
+        if (distanceToPlayer < chaseDistance && !playerAbove && IsGrounded())
         {
             currentState = State.Chase;
         }
-        else if (playerAbove)
+        else if (playerAbove || !IsGrounded())
         {
             currentState = State.Idle;
         }
@@ -251,6 +262,11 @@ public class GolemScript : MonoBehaviour
     public bool ShootIdleCheck()
     {
         return Physics2D.OverlapBox(shootCheck.position, new Vector2(10, 10), 10, playerLayer);
+    }
+
+    public bool IsGrounded()
+    {
+        return Physics2D.OverlapBox(groundCheck.position, new Vector2(0.25f, 0.25f), 0.25f, groundLayer);
     }
 
     void OnCollisionEnter2D(Collision2D collision)

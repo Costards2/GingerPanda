@@ -197,7 +197,7 @@ Transform:
   m_Children:
   - {fileID: 3345596000233305557}
   m_Father: {fileID: 0}
-  m_RootOrder: 20
+  m_RootOrder: 6
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0.17}
 --- !u!212 &2144030925132141286
 SpriteRenderer:
@@ -491,6 +491,7 @@ MonoBehaviour:
   Leaf2: {fileID: 0}
   Leaf3: {fileID: 0}
   leafInput: 0
+  leafs: 3
   imortal: 0
   player: {fileID: 7829922791036190107}
   playerEverything: {fileID: 3289373264683187328}
@@ -517,7 +518,7 @@ MonoBehaviour:
   goThroughPlatform: {fileID: 0}
   manaSystem: {fileID: 4471617163358254619}
   damageRB: {x: 0, y: 0}
-  playerCheckPoint: {x: 0, y: 0}
+  playerCheckPoint: {x: 0, y: 0, z: 0}
   collectables: 0
   vertical: {x: 0, y: 0}
   playerDied: 0

@@ -48,7 +48,7 @@ public class Boss : MonoBehaviour
 
     void Update()
     {
-        Debug.Log(currentState);
+        //Debug.Log(currentState);
 
         switch (currentState)
         {
