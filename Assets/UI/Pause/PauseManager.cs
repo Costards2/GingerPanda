@@ -15,23 +15,24 @@ public class PauseManager : MonoBehaviour
     public void ResumeGame()
     {
         //Debug.Log("Resumado");
-        EditorApplication.isPaused = false;
-        //Time.timeScale = 1;
+        //EditorApplication.isPaused = false;
+
         pauseScreen.SetActive(false);
         basicinterface.SetActive(true);
         Cursor.visible = false;
         isPaused = false;
+        Time.timeScale = 1;
     }
 
     public void PauseGame()
     {
         //Debug.Log("Pausado");
-        EditorApplication.isPaused = true;
-        //Time.timeScale = 0;
+        //EditorApplication.isPaused = true;
         pauseScreen.SetActive(true);
         basicinterface.SetActive(false);
         Cursor.visible = true;
         isPaused = true;
+        Time.timeScale = 0;
     }
 
     public void MainMenu()
@@ -45,9 +46,10 @@ public class PauseManager : MonoBehaviour
 
         if (Input.GetKeyDown(KeyCode.Escape) && isPaused == false)
         {
+
             PauseGame();
         }
-        else if (Input.GetKeyDown(KeyCode.Escape) && isPaused == true)
+        else if (Input.GetKeyDown(KeyCode.Escape) && isPaused)
         {
             ResumeGame();
         }
