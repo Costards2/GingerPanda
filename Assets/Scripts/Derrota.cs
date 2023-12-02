@@ -1,22 +1,23 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
 
 public class Derrota : MonoBehaviour
 {
-    public GameObject perso, derrota;
-    // Start is called before the first frame update
+    public GameObject perso, derrota, vitoria;
+
     void Start()
     {
         derrota.SetActive(false);
     }
 
-    // Update is called once per frame
-    void Update()
+    public void Vitoria()
     {
-        if (perso == null)
-        {
-            derrota.SetActive(true);
-        }
+        vitoria.SetActive(true);
+
+        Cursor.visible = true;
+
+        Time.timeScale = 0;
     }
 }

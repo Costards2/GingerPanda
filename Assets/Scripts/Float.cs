@@ -20,7 +20,7 @@ public class Float : MonoBehaviour
     void Update()
     {
         float newY = Mathf.PingPong(Time.time * floatSpeed, maxHeight - minHeight) + minHeight;
-        transform.position = new Vector3(transform.position.x, newY + initialY, -3);
+        transform.position = new Vector3(transform.position.x, newY + initialY, -4);
 
     }
 }

@@ -1063,14 +1063,13 @@ public class MoveFSM : MonoBehaviour
 
     private void OnCollisionStay2D(Collision2D collision)
     {
-        //if (collision.gameObject.CompareTag("GoThroughPlatform"))
-        //{
-        //    //shouldNotSlope = true;
-        //}
-        //else
-        //{
-        //    //shouldNotSlope = false;
-        //}
+        if (collision.gameObject.CompareTag("Enemy") || collision.gameObject.CompareTag("EnemyFire") || collision.gameObject.CompareTag("EnemyGolem") || collision.gameObject.CompareTag("Projectile") || collision.gameObject.CompareTag("BossVine"))
+        {
+            damageRB = player.transform.InverseTransformPoint(collision.transform.position);//You can use Transform.InverseTransformPoint to find the enemy's relative position from the perspective of the player.
+                                                                                            //This Vector2 damageRB is a vector that describes the enemy's position offset from the player's position along the player's left/right, up/down, and forward/back axes.
+            ReceiveDamage(1);
+
+        }
 
     }
 

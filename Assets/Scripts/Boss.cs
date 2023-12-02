@@ -23,6 +23,7 @@ public class Boss : MonoBehaviour
     public int wichSpawPointOfTheVine3;
     public CircleCollider2D bossCircleCollider;
     public GameObject colliderDano;
+    public GameObject vitoria;
 
     private enum State
     {
@@ -182,10 +183,10 @@ public class Boss : MonoBehaviour
 
         GameObject newVineHorizontalVine1 = Instantiate(horizontalVinePrefab, vineSpawnPointATK1.position, Quaternion.identity);
     }
-    public GameObject vitoria;
-    void Die()
+
+    public void Die()
     {
-        vitoria.SetActive(true);
+        FindAnyObjectByType<Derrota>().Vitoria();
         Destroy(gameObject);
     }
 
