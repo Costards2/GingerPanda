@@ -42,6 +42,7 @@ public class GolemScript : MonoBehaviour
     private readonly float kbForceX = 10f;
     private readonly float kbForceY = 2.25f;
     float facing;
+    bool damegeProjectile = true;
 
     private enum State
     {
@@ -210,7 +211,7 @@ public class GolemScript : MonoBehaviour
 
         isKb = true;
 
-        if (isKb)
+        if (isKb && !damegeProjectile)
         {
             if (facing == 1)
             {
@@ -222,6 +223,11 @@ public class GolemScript : MonoBehaviour
                 rb.velocity = new Vector2(kbForceX, kbForceY);
                 isKb = false;
             }
+        }
+        else
+        {
+            isKb = false;
+            damegeProjectile = false;
         }
         Invoke(nameof(StopKB), 0.15f);
         StartCoroutine(DamageWait());
@@ -273,6 +279,7 @@ public class GolemScript : MonoBehaviour
     {
         if (collision.gameObject.CompareTag("Projectile"))
         {
+            damegeProjectile = true;
             TakeDamage(20);
         }
     }
