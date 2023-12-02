@@ -10,6 +10,7 @@ public class MenuManager : MonoBehaviour
 
     private void Awake()
     {
+        Time.timeScale = 1;
         Cursor.visible = true;
     }
 

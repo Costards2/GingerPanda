@@ -167,7 +167,7 @@ public class MoveFSM : MonoBehaviour
 
         jumpInput = Input.GetKey(KeyCode.Space);
         horizontalInput = Input.GetAxisRaw("Horizontal");
-        dashInput = Input.GetKey(KeyCode.LeftShift);
+        dashInput = Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift);
         shootInput = Input.GetKey(KeyCode.L);
         atkInput = Input.GetKey(KeyCode.K);
         leafInput = Input.GetKeyDown(KeyCode.Q);
@@ -801,10 +801,10 @@ public class MoveFSM : MonoBehaviour
     {
         canDash = false;
         isDashing = true;
+        gameObject.layer = LayerMask.NameToLayer("PlayerDashThrough"); //Ailu atravessa inimigos
         float originalGravity = rb.gravityScale;
         rb.gravityScale = 0f;
         //playerCollider.excludeLayers = 8;
-        gameObject.layer = LayerMask.NameToLayer("PlayerDashThrough"); //Ailu atravessa inimigos
         rb.velocity = new Vector2(moveDirection.x * dashingPower, 0f);
         trail.emitting = true;
 
@@ -812,9 +812,9 @@ public class MoveFSM : MonoBehaviour
 
         trail.emitting = false;
         rb.gravityScale = originalGravity;
-        gameObject.layer = LayerMask.NameToLayer("Player"); // Ailu não atravessa inimigos 
         //playerCollider.excludeLayers = 0;
         isDashing = false;
+        gameObject.layer = LayerMask.NameToLayer("Player"); // Ailu não atravessa inimigos 
         yield return new WaitForSeconds(dashingCooldown);
         canDash = true;
     }
