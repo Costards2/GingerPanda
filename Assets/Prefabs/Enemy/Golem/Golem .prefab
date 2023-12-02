@@ -200,7 +200,7 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 2048
   shootCheck: {fileID: 8853941282765758440}
-  maxHealth: 150
+  maxHealth: 120
   rb: {fileID: 3073456340605193568}
 --- !u!1 &6268357657346350080
 GameObject:

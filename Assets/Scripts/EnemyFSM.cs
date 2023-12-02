@@ -168,7 +168,7 @@ public class EnemyFSM : MonoBehaviour
 
         if (collision.gameObject.CompareTag("Projectile"))
         {
-            TakeDamage(20);
+            TakeDamage(25);
         }
     }
 }

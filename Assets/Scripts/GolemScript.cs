@@ -43,6 +43,8 @@ public class GolemScript : MonoBehaviour
     private readonly float kbForceY = 2.25f;
     float facing;
     bool damegeProjectile = true;
+    [SerializeField] float rayCastLength;
+    bool canShootIdle;
 
     private enum State
     {
@@ -56,6 +58,7 @@ public class GolemScript : MonoBehaviour
 
     void Start()
     {
+        rayCastLength = 6.5f;
         currentState = State.Idle;
         player = GameObject.FindGameObjectWithTag("Player").transform;
         animator = GetComponent<Animator>();
@@ -79,18 +82,17 @@ public class GolemScript : MonoBehaviour
         {
             chaseSpeed = 0;
         }
-        
-        timer += Time.deltaTime;
-        distanceToPlayer = Vector2.Distance(transform.position, player.position);
 
-        if (player.position.y > transform.position.y && Mathf.Abs(player.position.x - transform.position.x) < 1f)
-        {
-            playerAbove = true;
-        }
-        else
-        {
-            playerAbove = false;
-        }
+        //distanceToPlayer = Vector2.Distance(transform.position, player.position);
+
+        //if (player.position.y > transform.position.y && Mathf.Abs(player.position.x - transform.position.x) < 1f)
+        //{
+        //    playerAbove = true;
+        //}
+        //else
+        //{
+        //    playerAbove = false;
+        //}
 
         switch (currentState)
         {
@@ -110,36 +112,69 @@ public class GolemScript : MonoBehaviour
     {
         animator.Play("Idle");
 
-        if (player.position.x > transform.position.x)
-        {
-            transform.localScale = new Vector3(scale, scale, scale);
-        }
-        else
-        {
-            transform.localScale = new Vector3(-scale, scale, scale);
-        }
-
-       
-        if (distanceToPlayer < chaseDistance && !playerAbove && IsGrounded())
+        //if (player.position.x > transform.position.x)
+        //{
+        //    transform.localScale = new Vector3(scale, scale, scale);
+        //}
+        //else
+        //{
+        //    transform.localScale = new Vector3(-scale, scale, scale);
+        //}
+        if (Physics2D.Raycast(transform.position, Vector2.right, rayCastLength, playerLayer) || Physics2D.Raycast(transform.position, Vector2.left, rayCastLength, playerLayer))
         {
             currentState = State.Chase;
         }
-        else if(playerAbove || !IsGrounded())
+        else if ((Physics2D.Raycast(transform.position, Vector2.right, 8.5f, playerLayer) || Physics2D.Raycast(transform.position, Vector2.left, 8.5f, playerLayer)))
         {
-            if (timer > 2 && canShoot)
+            canShootIdle = true;
+        }
+        else
+        {
+            canShootIdle = false;
+        }
+
+        if (canShoot && canShootIdle)
+        {
+            timer += Time.deltaTime;
+
+            if (player.position.x > transform.position.x)
+            {
+                transform.localScale = new Vector3(scale, scale, scale);
+            }
+            else
+            {
+                transform.localScale = new Vector3(-scale, scale, scale);
+            }
+
+            if(timer > 2f)
             {
                 canShoot = false;
                 timer = 0;
                 currentState = State.Attack;
             }
         }
+
+        //else if (playerAbove || !IsGrounded())
+        //{
+        //    if (timer > 2 && canShoot)
+        //    {
+        //        canShoot = false;
+        //        timer = 0;
+        //        currentState = State.Attack;
+        //    }
+        //}
     }
 
     void ChaseState()
     {
         animator.Play("Run");
 
-        if (distanceToPlayer < chaseDistance && IsGrounded())
+        timer += Time.deltaTime;
+
+        RaycastHit2D hitRight = Physics2D.Raycast(transform.position, Vector2.right, rayCastLength, playerLayer);
+        RaycastHit2D hitLeft = Physics2D.Raycast(transform.position, Vector2.left, rayCastLength, playerLayer);
+
+        if ((hitRight || hitLeft) && IsGrounded())
         {
             Vector2 directionX = new Vector2(player.position.x - transform.position.x, 0).normalized;
             rb.velocity = new Vector2(directionX.x * chaseSpeed, rb.velocity.y);
@@ -151,14 +186,15 @@ public class GolemScript : MonoBehaviour
 
             float flipBuffer = 0.2f; 
 
-        if (player.position.x > transform.position.x + flipBuffer)
-        {
-            transform.localScale = new Vector3(scale, scale, scale);
-        }
-        else if (player.position.x < transform.position.x - flipBuffer)
-        {
-            transform.localScale = new Vector3(-scale, scale, scale);
-        }
+            if (player.position.x > transform.position.x + flipBuffer)
+            {
+                transform.localScale = new Vector3(scale, scale, scale);
+            }
+            else if (player.position.x < transform.position.x - flipBuffer)
+            {
+                transform.localScale = new Vector3(-scale, scale, scale);
+            }
+
             if (timer > 2 && canShoot)
             {
                 canShoot = false;
@@ -178,11 +214,18 @@ public class GolemScript : MonoBehaviour
 
         Shoot();
 
-        if (distanceToPlayer < chaseDistance && !playerAbove && IsGrounded())
+        RaycastHit2D hitRight = Physics2D.Raycast(transform.position, Vector2.right, rayCastLength, playerLayer);
+        RaycastHit2D hitLeft = Physics2D.Raycast(transform.position, Vector2.left, rayCastLength, playerLayer);
+
+        if ((hitRight || hitLeft) && !playerAbove && IsGrounded())
         {
             currentState = State.Chase;
         }
-        else if (playerAbove || !IsGrounded())
+        else if ((Physics2D.Raycast(transform.position, Vector2.right, 8.5f, playerLayer) || Physics2D.Raycast(transform.position, Vector2.left, 8.5f, playerLayer)))        
+        {
+            currentState = State.Idle;
+        }
+        else if (!IsGrounded())
         {
             currentState = State.Idle;
         }
@@ -280,7 +323,7 @@ public class GolemScript : MonoBehaviour
         if (collision.gameObject.CompareTag("Projectile"))
         {
             damegeProjectile = true;
-            TakeDamage(20);
+            TakeDamage(25);
         }
     }
 }
