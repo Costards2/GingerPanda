@@ -2,7 +2,6 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using Unity.VisualScripting;
-using UnityEditor.Timeline;
 using UnityEngine;
 using UnityEngine.U2D;
 using UnityEngine.UIElements;
@@ -38,6 +37,7 @@ public class Boss : MonoBehaviour
 
     void Start()
     {
+        vitoria.SetActive(false);
         currentHealth = maxHealth;
         sprite = GetComponent<SpriteRenderer>();
         normalColor = sprite.color;
@@ -182,12 +182,11 @@ public class Boss : MonoBehaviour
 
         GameObject newVineHorizontalVine1 = Instantiate(horizontalVinePrefab, vineSpawnPointATK1.position, Quaternion.identity);
     }
-
+    public GameObject vitoria;
     void Die()
     {
+        vitoria.SetActive(true);
         Destroy(gameObject);
-
-
     }
 
     private void OnCollisionEnter2D(Collision2D collision)
