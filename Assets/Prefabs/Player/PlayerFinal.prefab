@@ -197,7 +197,7 @@ Transform:
   m_Children:
   - {fileID: 3345596000233305557}
   m_Father: {fileID: 0}
-  m_RootOrder: 6
+  m_RootOrder: 14
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0.17}
 --- !u!212 &2144030925132141286
 SpriteRenderer:
@@ -491,7 +491,7 @@ MonoBehaviour:
   Leaf2: {fileID: 0}
   Leaf3: {fileID: 0}
   leafInput: 0
-  leafs: 3
+  leafs: 0
   imortal: 0
   player: {fileID: 7829922791036190107}
   playerEverything: {fileID: 3289373264683187328}
@@ -527,6 +527,7 @@ MonoBehaviour:
   slopeCheckDistance: 1.1
   slopeCheckDistanceHorizontal: 1.1
   maxSlopeAngle: 45
+  gameOver: {fileID: 0}
 --- !u!114 &4471617163358254619
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -541,7 +542,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   maxMana: 100
   startingMana: 100
-  manaRegenRate: 10
+  manaRegenRate: 5
   currentMana: 0
 --- !u!1 &8576224351049594771
 GameObject:

@@ -41,6 +41,12 @@ public class PauseManager : MonoBehaviour
         SceneManager.LoadScene("Menu");
     }
 
+    public void RestartCurrentScene()
+    {
+        int currentScene = SceneManager.GetActiveScene().buildIndex;
+        SceneManager.LoadScene(currentScene);
+    }
+
     private void Update()
     {
         Debug.Log(isPaused);

@@ -2433,10 +2433,18 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 3324027174584679550, guid: 5d66b5b26c149f34bbc3a6d863a0ea93, type: 3}
+      propertyPath: m_IsActive
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 5196536120034966922, guid: 5d66b5b26c149f34bbc3a6d863a0ea93, type: 3}
       propertyPath: manaSystem
       value: 
       objectReference: {fileID: 1140235134}
+    - target: {fileID: 6001072379802633360, guid: 5d66b5b26c149f34bbc3a6d863a0ea93, type: 3}
+      propertyPath: m_IsActive
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 6014469000147684960, guid: 5d66b5b26c149f34bbc3a6d863a0ea93, type: 3}
       propertyPath: m_Camera
       value: 
@@ -2444,6 +2452,10 @@ PrefabInstance:
     - target: {fileID: 8115688662322357563, guid: 5d66b5b26c149f34bbc3a6d863a0ea93, type: 3}
       propertyPath: m_LocalPosition.z
       value: 4765
+      objectReference: {fileID: 0}
+    - target: {fileID: 8207708634576844986, guid: 5d66b5b26c149f34bbc3a6d863a0ea93, type: 3}
+      propertyPath: m_IsActive
+      value: 1
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -2883,6 +2895,10 @@ PrefabInstance:
       propertyPath: Life3
       value: 
       objectReference: {fileID: 913463606}
+    - target: {fileID: 6711039420039234006, guid: b1cb5e6b9844f0c40a582b58d9f060b8, type: 3}
+      propertyPath: leafs
+      value: 3
+      objectReference: {fileID: 0}
     - target: {fileID: 7829922791036190107, guid: b1cb5e6b9844f0c40a582b58d9f060b8, type: 3}
       propertyPath: m_Name
       value: PlayerFinal

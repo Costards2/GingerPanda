@@ -8,6 +8,10 @@ public class MenuManager : MonoBehaviour
     [SerializeField] private GameObject painelMenu;
     [SerializeField] private GameObject paineBasic;
 
+    private void Awake()
+    {
+        Cursor.visible = true;
+    }
 
     public void MainMenu()
     {

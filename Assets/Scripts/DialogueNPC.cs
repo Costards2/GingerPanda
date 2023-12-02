@@ -113,17 +113,17 @@ public class DialogueNPC : MonoBehaviour
         if (collision.CompareTag("Player"))
         {
             readyToTalk = true;
+
+            if (!startDialogue && !dontTalkAgaing)
+            {
+                FindObjectOfType<MoveFSM>().doNothing = true;
+                firstTalk = false;
+                StartDialogue();
+            }
         }
         else
         {
             readyToTalk = false;
-        }
-
-        if (!startDialogue && (FindObjectOfType<MoveFSM>().IsGrounded() == true) && readyToTalk && !dontTalkAgaing)
-        {
-            FindObjectOfType<MoveFSM>().doNothing = true;
-            firstTalk = false;
-            StartDialogue();
         }
     }
 

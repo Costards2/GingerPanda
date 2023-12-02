@@ -21,13 +21,13 @@ public class ProximoLevel : MonoBehaviour
         loadingScreen.SetActive(true);
 
         StartCoroutine(LoadLevelAsync(levelToLoad));
+        Time.timeScale = 1;
     }
 
     IEnumerator LoadLevelAsync(string levelToload)
     {
 
         yield return new WaitForSeconds(2f);
-
         AsyncOperation loadOperation = SceneManager.LoadSceneAsync(levelToload);
 
         // This code is the visual part of the slider, and It's working fine, however the game is too fast to load so 

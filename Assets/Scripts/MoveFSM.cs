@@ -28,13 +28,13 @@ public class MoveFSM : MonoBehaviour
     private readonly float wallSlidingSpeed = 1f;
     private bool isWallJumping;
     private float wallJumpingDirection;
-    private Vector2 wallJumpingPower = new(16f, 14f);
+    private Vector2 wallJumpingPower = new(8f, 14f);
     public float facing = 0;
     bool canWallJump = true;
     public float wallJumpTime = 0.3f;
     public float wallJumpCooldown = 0.5f;
     private float wallJumpingCounter;
-    private readonly float wallJumpingDuration = 0.2f;
+    private readonly float wallJumpingDuration = 0.1f;
     private readonly float wallJumpingTime = 0.2f;
 
     [Header("Dash")]
@@ -45,7 +45,7 @@ public class MoveFSM : MonoBehaviour
     public float dashingPower = 14f;
     public float dashingTime = 0.35f;
     public float dashingCooldown = 1f;
-    bool finishedShooting;
+    bool finishedShooting = true;
 
     [Header("Shoot")]
     public float shootCost = 20f;
@@ -129,6 +129,8 @@ public class MoveFSM : MonoBehaviour
     private float slopeDownAngleOld;
     private bool canWalkOnSlope;
     private Vector2 newForce;
+    [SerializeField]
+    private GameObject gameOver;
 
     //bool shouldNotSlope = false; //necessary condition because the Gothrough plataform and Slope were conflicting //I have to chnge It 
 
@@ -309,7 +311,7 @@ public class MoveFSM : MonoBehaviour
 
         if (IsGrounded())
         {
-            if (jumpInput && canJump)
+            if (jumpInput && canJump && canWalkOnSlope)
             {
                 state = State.Jump;
             }
@@ -391,12 +393,12 @@ public class MoveFSM : MonoBehaviour
         {
             state = State.Dash;
         }
-        else if (IsWalled() && !IsGrounded())
+        else if (IsWalled() && !IsGrounded() && horizontalInput != facing)
         {
             state = State.WallSlide;
 
         }
-        else if (atkInput)
+        else if (atkInput && !isAtking)
         {
             state = State.Atk;
         }
@@ -451,15 +453,16 @@ public class MoveFSM : MonoBehaviour
     void WallSlide()
     {
         animator.Play("WallSlide");
-        rb.velocity = new Vector2(0, -0.7f); //Prevent the player from sliding after jumpin to another wall (Me deu vontade ai escrevi fiz em Inglês)
+        rb.velocity = new Vector2(0, -0.7f); //Prevent the player from sliding upwards after jumpin to another wall (Me deu vontade ai escrevi fiz em Inglês)
 
         rb.velocity = new Vector2(rb.velocity.x, Mathf.Clamp(rb.velocity.y, -wallSlidingSpeed, float.MaxValue));
 
-        if (horizontalInput == facing)
-        {
-            state = State.Glide;
-        }
-        else if (jumpInput && canWallJump && canJump)
+        //if (horizontalInput == facing)
+        //{
+        //    state = State.Glide;
+        //}
+
+        if (jumpInput && canWallJump && canJump)
         {
             state = State.WallJump;
         }
@@ -575,11 +578,11 @@ public class MoveFSM : MonoBehaviour
             nextAtkTime = Time.time + 1f / atkRate;
         }
 
-        else if (horizontalInput == 0f && rb.velocity.x == 0 && finishedShooting && IsGrounded() && ((canWalkOnSlope && isOnSlope) || !isOnSlope) && rb.velocity.y == 0)
+        else if (horizontalInput == 0f && rb.velocity.x == 0 && !isAtking && IsGrounded() && ((canWalkOnSlope && isOnSlope) || !isOnSlope) && rb.velocity.y == 0)
         {
             state = State.Idle;
         }
-        else if (horizontalInput != 0f && finishedShooting && IsGrounded() && ((canWalkOnSlope && isOnSlope) || !isOnSlope) && rb.velocity.y == 0)
+        else if (horizontalInput != 0f && finishedShooting && IsGrounded() && !isAtking && ((canWalkOnSlope && isOnSlope) || !isOnSlope) && rb.velocity.y == 0)
         {
             state = State.Run;
         }
@@ -779,6 +782,10 @@ public class MoveFSM : MonoBehaviour
         Debug.Log("GAME OVER!");
 
         Destroy(gameObject);
+
+        gameOver.SetActive(true);
+        Cursor.visible = true;
+        Time.timeScale = 0;
     }
 
     #endregion
@@ -921,7 +928,7 @@ public class MoveFSM : MonoBehaviour
 
     private void SlopeCheck()
     {
-        Vector2 checkPos = transform.position - (Vector3)(new Vector2(0.0f, colliderSize.y / 4));
+        Vector2 checkPos = transform.position - (Vector3)(new Vector2(0f, colliderSize.y / 4));
 
         SlopeCheckHorizontal(checkPos);
         SlopeCheckVertical(checkPos);
