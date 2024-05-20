@@ -1,5 +1,4 @@
 # [JD0026] Práticas Integradas 2
----
 
 # EN
 
